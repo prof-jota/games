@@ -1,122 +1,23 @@
 *{
-margin:0;
-padding:0;
-box-sizing:border-box;
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
 }
 
 body{
 
-background:#090909;
+    background:#0b1120;
 
-font-family:'Press Start 2P',cursive;
+    color:white;
 
-color:white;
-
-overflow-x:hidden;
-
-background-image:
-radial-gradient(circle,#202020 1px,transparent 1px);
-
-background-size:25px 25px;
+    font-family:Arial, Helvetica, sans-serif;
 
 }
 
-header{
+.container{
 
-text-align:center;
+    display:flex;
 
-padding:40px;
-
-}
-
-header h1{
-
-font-size:45px;
-
-color:#00ffcc;
-
-text-shadow:0 0 20px cyan;
-
-margin-bottom:20px;
-
-}
-
-header p{
-
-font-size:15px;
-
-color:#aaa;
-
-}
-
-.menu{
-
-display:grid;
-
-grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-
-gap:30px;
-
-padding:40px;
-
-max-width:1300px;
-
-margin:auto;
-
-}
-
-.card{
-
-background:#181818;
-
-border:3px solid #00ffff;
-
-border-radius:15px;
-
-padding:35px;
-
-cursor:pointer;
-
-transition:.3s;
-
-text-align:center;
-
-box-shadow:0 0 20px rgba(0,255,255,.3);
-
-}
-
-.card:hover{
-
-transform:scale(1.08);
-
-background:#00ffff;
-
-color:black;
-
-box-shadow:0 0 50px cyan;
-
-}
-
-.card{
-
-font-size:60px;
-
-}
-
-.card h2{
-
-margin-top:20px;
-
-font-size:15px;
-
-}
-
-footer{
-
-text-align:center;
-
-padding:40px;
-
-color:#666;
+    min-height:100vh;
 
 }
