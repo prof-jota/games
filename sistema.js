@@ -58,6 +58,12 @@ const programas = {
 
 
 
+// VARIÁVEIS DO SISTEMA
+
+let scriptAtual = null;
+
+let intervaloAtual = null;
+
 
 
 // ===============================================
@@ -66,7 +72,6 @@ const programas = {
 
 
 function executarPrograma(nome){
-
 
 
     if(!programas[nome]){
@@ -85,9 +90,7 @@ function executarPrograma(nome){
 
 
     terminalMensagem(
-
         "CARREGANDO " + nome
-
     );
 
 
@@ -102,11 +105,10 @@ function executarPrograma(nome){
         barra +=10;
 
 
-        console.log(
 
+        console.log(
             "LOADING:",
             barra+"%"
-
         );
 
 
@@ -117,9 +119,7 @@ function executarPrograma(nome){
             clearInterval(carregamento);
 
 
-
             abrirPrograma(nome);
-
 
 
         }
@@ -128,23 +128,26 @@ function executarPrograma(nome){
     },100);
 
 
-
 }
 
 
 
 
 
-
-
 // ===============================================
-// ABRIR JOGO
+// ABRIR PROGRAMA
 // ===============================================
+
 
 function abrirPrograma(nome){
 
 
+    fecharPrograma();
+
+
+
     const jogo = programas[nome];
+
 
 
     console.log(
@@ -153,20 +156,30 @@ function abrirPrograma(nome){
     );
 
 
+
     const canvas =
     document.getElementById("gameCanvas");
 
 
-    const ctx =
-    canvas.getContext("2d");
+
+    if(canvas){
 
 
-    ctx.clearRect(
-        0,
-        0,
-        canvas.width,
-        canvas.height
-    );
+        const ctx =
+        canvas.getContext("2d");
+
+
+        ctx.clearRect(
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
+
+
+    }
+
+
 
 
 
@@ -174,61 +187,36 @@ function abrirPrograma(nome){
     document.createElement("script");
 
 
+
     script.src = jogo.arquivo;
+
+
+
+    scriptAtual = script;
+
 
 
     script.onload = ()=>{
 
 
         console.log(
+
             nome,
+
             "CARREGADO"
+
         );
 
 
     };
 
 
-    document.body.appendChild(script);
-
-
-}
-
-
 
     document.body.appendChild(script);
 
 
 
 }
-
-
-
-
-
-
-
-
-// ===============================================
-// TERMINAL
-// ===============================================
-
-
-function terminalMensagem(texto){
-
-
-
-    console.log(
-
-        ">",
-        texto
-
-    );
-
-
-
-}
-
 
 
 
@@ -246,11 +234,61 @@ function fecharPrograma(){
 
 
     console.log(
-
-        "RETORNANDO AO ARCADE..."
-
+        "ENCERRANDO PROGRAMA..."
     );
 
+
+
+    // limpa temporizadores
+
+    if(intervaloAtual){
+
+
+        clearInterval(intervaloAtual);
+
+
+    }
+
+
+
+
+    // remove script anterior
+
+
+    if(scriptAtual){
+
+
+        scriptAtual.remove();
+
+
+        scriptAtual=null;
+
+
+    }
+
+
+
+
+}
+
+
+
+
+
+
+
+// ===============================================
+// TERMINAL
+// ===============================================
+
+
+function terminalMensagem(texto){
+
+
+    console.log(
+        ">",
+        texto
+    );
 
 
 }
@@ -263,7 +301,7 @@ function fecharPrograma(){
 
 
 // ===============================================
-// REGISTRO DE JOGADORES
+// JOGADOR
 // ===============================================
 
 
@@ -300,6 +338,6 @@ function adicionarPontos(valor){
 
 console.log(
 
-    "ARCADE WEB SYSTEM ONLINE"
+"ARCADE WEB SYSTEM ONLINE"
 
 );
