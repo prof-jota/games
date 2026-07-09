@@ -7,7 +7,7 @@
 
 
 const canvas =
-document.getElementById("pongCanvas");
+document.getElementById("gameCanvas");
 
 
 const ctx =
