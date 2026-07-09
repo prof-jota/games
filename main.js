@@ -9,7 +9,38 @@
 // ==========================================
 // ELEMENTOS DO SISTEMA
 // ==========================================
+let jogoAtual = null;
 
+
+function pararJogo(){
+
+    if(jogoAtual){
+
+        jogoAtual = null;
+
+    }
+
+
+    const canvas =
+    document.getElementById("gameCanvas");
+
+
+    if(canvas){
+
+        const ctx =
+        canvas.getContext("2d");
+
+
+        ctx.clearRect(
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
+
+    }
+
+}
 
 const bootScreen = document.getElementById("boot-screen");
 
