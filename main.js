@@ -317,21 +317,6 @@ function iniciarPrograma(programa){
     nomePrograma.textContent = programa;
 
 
-    if(programa==="PONG.EXE"){
-
-
-        let script =
-        document.createElement("script");
-
-
-        script.src="jogos/pong.js";
-
-
-        document.body.appendChild(script);
-
-
-    }
-
 
 }
 
