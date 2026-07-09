@@ -141,45 +141,58 @@ function executarPrograma(nome){
 // ABRIR JOGO
 // ===============================================
 
-
 function abrirPrograma(nome){
-
 
 
     const jogo = programas[nome];
 
 
-
     console.log(
-
         "EXECUTANDO:",
         nome
+    );
 
+
+    const canvas =
+    document.getElementById("gameCanvas");
+
+
+    const ctx =
+    canvas.getContext("2d");
+
+
+    ctx.clearRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
     );
 
 
 
-    const script = 
+    let script =
     document.createElement("script");
 
 
-
     script.src = jogo.arquivo;
-
 
 
     script.onload = ()=>{
 
 
         console.log(
-
             nome,
-            "CARREGADO COM SUCESSO"
-
+            "CARREGADO"
         );
 
 
     };
+
+
+    document.body.appendChild(script);
+
+
+}
 
 
 
