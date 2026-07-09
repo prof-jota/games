@@ -1,35 +1,464 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>ARCADE WEB SYSTEM</title>
+
+    <link rel="stylesheet" href="style.css">
+
+</head>
+
+
 <body>
 
-<div class="container">
 
-    <aside id="sidebar">
+<!-- TELA DE INICIALIZAÇÃO -->
 
-    </aside>
+<div id="boot-screen">
 
-    <main>
+    <div class="terminal">
 
-        <header id="topbar">
+        <h1>ARCADE WEB SYSTEM</h1>
 
-        </header>
+        <p>Inicializando sistema...</p>
 
-        <section id="banner">
+        <div class="loading">
 
-        </section>
+            <div id="progress"></div>
 
-        <section id="games">
+        </div>
 
-        </section>
+        <p id="boot-message">
+            CARREGANDO COMPONENTES...
+        </p>
 
-        <section id="stats">
 
-        </section>
-
-        <footer>
-
-        </footer>
-
-    </main>
+    </div>
 
 </div>
 
+
+
+
+<!-- SISTEMA PRINCIPAL -->
+
+<div id="arcade" class="hidden">
+
+
+<header>
+
+<div class="top">
+
+    <div>
+        🎮 ARCADE WEB v1.0
+    </div>
+
+
+    <div>
+
+        CREDIT:
+        <span id="credit">
+            99
+        </span>
+
+        |
+
+        USER:
+        PROFESSOR
+
+    </div>
+
+
+</div>
+
+
+</header>
+
+
+
+
+<div class="layout">
+
+
+
+<!-- MENU LATERAL -->
+
+<aside>
+
+
+<h2>
+MENU
+</h2>
+
+
+<ul>
+
+
+<li class="selected">
+> INÍCIO
+</li>
+
+
+<li>
+> JOGOS
+</li>
+
+
+<li>
+> FAVORITOS
+</li>
+
+
+<li>
+> RANKING
+</li>
+
+
+<li>
+> CONFIG
+</li>
+
+
+<li>
+> SOBRE
+</li>
+
+
+</ul>
+
+
+</aside>
+
+
+
+
+
+<!-- ÁREA PRINCIPAL -->
+
+<main>
+
+<!-- ÁREA DE EXECUÇÃO DOS JOGOS -->
+
+<section id="game-window" class="hidden">
+
+    <div class="game-header">
+
+        <span>
+            EXECUTANDO: <b id="program-name">---</b>
+        </span>
+
+        <button id="close-game">
+            [ FECHAR ]
+        </button>
+
+    </div>
+
+
+    <canvas id="pongCanvas" width="800" height="400"></canvas>
+
+
+</section>
+
+<section class="welcome">
+
+
+<h2>
+BEM-VINDO AO ARCADE WEB
+</h2>
+
+
+<p>
+Selecione um jogo para iniciar.
+</p>
+
+
+</section>
+
+
+
+
+
+<!-- JOGO DESTAQUE -->
+
+
+<section class="featured">
+
+
+<div>
+
+
+<h1>
+PONG.EXE
+</h1>
+
+
+<p>
+Desafie seus amigos em uma partida clássica.
+</p>
+
+
+<button>
+[ JOGAR ]
+</button>
+
+
+</div>
+
+
+
+<div class="screen">
+
+
++----------------+
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;●
+
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|
+
+
++----------------+
+
+
+</div>
+
+
+</section>
+
+
+
+
+
+
+
+<!-- LISTA DE JOGOS -->
+
+<section>
+
+
+<h2>
+> JOGOS DISPONÍVEIS
+</h2>
+
+
+
+<div class="games">
+
+
+
+<div class="game">
+
+<span>
+01
+</span>
+
+PONG.EXE
+
+<small>
+[ONLINE]
+</small>
+
+</div>
+
+
+
+<div class="game">
+
+<span>
+02
+</span>
+
+SNAKE.EXE
+
+<small>
+[ONLINE]
+</small>
+
+</div>
+
+
+
+
+<div class="game">
+
+<span>
+03
+</span>
+
+TETRIS.EXE
+
+<small>
+[ONLINE]
+</small>
+
+</div>
+
+
+
+
+<div class="game">
+
+<span>
+04
+</span>
+
+MEMORIA.EXE
+
+<small>
+[ONLINE]
+</small>
+
+</div>
+
+
+
+
+<div class="game">
+
+<span>
+05
+</span>
+
+QUIZ.EXE
+
+<small>
+[ONLINE]
+</small>
+
+</div>
+
+
+
+
+<div class="game">
+
+<span>
+06
+</span>
+
+FORCA.EXE
+
+<small>
+[ONLINE]
+</small>
+
+</div>
+
+
+
+</div>
+
+
+</section>
+
+
+
+
+
+
+
+<!-- PAINEL INFERIOR -->
+
+
+<section class="status">
+
+
+<div>
+
+<h3>
+ESTATÍSTICAS
+</h3>
+
+<p>
+Jogos: 06
+</p>
+
+<p>
+Recorde: 00000
+</p>
+
+
+</div>
+
+
+
+<div>
+
+<h3>
+RANKING
+</h3>
+
+<p>
+01 PLAYER 9000
+</p>
+
+<p>
+02 PLAYER 7000
+</p>
+
+
+</div>
+
+
+
+
+<div>
+
+<h3>
+ÚLTIMOS JOGOS
+</h3>
+
+<p>
+PONG.EXE
+</p>
+
+<p>
+SNAKE.EXE
+</p>
+
+
+</div>
+
+
+
+</section>
+
+
+
+
+</main>
+
+
+</div>
+
+
+
+
+
+<footer>
+
+
+ARCADE WEB SYSTEM © 2023
+
+<span class="cursor">
+_
+</span>
+
+
+</footer>
+
+
+
+<script src="sistema.js"></script>
+<script src="memoria.js"></script>
+<script src="main.js"></script>
+
+
 </body>
+
+</html>
