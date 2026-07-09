@@ -1,5 +1,6 @@
 function abrirJogo(nome){
 
-window.location.href="jogos/"+nome+"/index.html";
+console.log("Arcade iniciado!");
+  
 
 }
