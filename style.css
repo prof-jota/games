@@ -1,0 +1,454 @@
+/* ==================================================
+   ARCADE WEB SYSTEM
+   STYLE V0.2
+================================================== */
+
+
+/* RESET */
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+
+body{
+
+    background:#eeeeee;
+
+    color:#222;
+
+    font-family:"Courier New", monospace;
+
+    min-height:100vh;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+}
+
+
+
+/* CONTAINER PRINCIPAL */
+
+.arcade{
+
+    width: 100%;
+    max-width: 1200px; /* Não passa de 1200px em telas grandes */
+    min-height: 100vh; /* Ocupa a altura da tela inteira em portáteis */
+    background: white;
+    border: 1px solid #444;
+    display: flex;
+    flex-direction: column;
+
+}
+
+
+
+/* ================================================
+   HEADER
+================================================ */
+
+
+.header{
+
+    height:65px;
+
+    border-bottom:1px solid #444;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    padding:0 25px;
+
+}
+
+
+
+.logo{
+
+    font-size:24px;
+
+    font-weight:bold;
+
+}
+
+
+
+.pesquisa{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+}
+
+
+
+.pesquisa input{
+
+    width:320px;
+
+    padding:8px;
+
+    background:white;
+
+    color:#222;
+
+    border:1px solid #555;
+
+    font-family:inherit;
+
+}
+
+
+
+.usuario{
+
+    font-size:18px;
+
+}
+
+
+
+
+
+/* ================================================
+   MENU
+================================================ */
+
+
+#menu{
+
+    padding:25px;
+
+}
+
+
+
+
+
+/* ================================================
+   DESTAQUE
+================================================ */
+
+
+.destaque{
+
+    border-bottom:1px solid #555;
+
+    padding-bottom:30px;
+
+}
+
+
+
+.titulo-area{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    margin-bottom:20px;
+
+}
+
+
+
+.titulo-area h2{
+
+    font-size:22px;
+
+}
+
+
+
+.banner{
+
+    height:240px;
+
+    border:1px solid #555;
+
+    display:flex;
+
+    flex-direction:column;
+
+    justify-content:center;
+
+    align-items:center;
+
+    gap:18px;
+
+}
+
+
+
+.banner h1{
+
+    font-size:48px;
+
+}
+
+
+
+.banner p{
+
+    font-size:20px;
+
+}
+
+
+
+
+
+button{
+
+    background:white;
+
+    color:#222;
+
+    border:1px solid #444;
+
+    padding:12px 40px;
+
+    cursor:pointer;
+
+    font-family:inherit;
+
+    font-size:16px;
+
+}
+
+
+
+button:hover{
+
+    background:#eeeeee;
+
+}
+
+
+
+
+
+/* ================================================
+   JOGOS
+================================================ */
+
+
+.jogos{
+
+    margin-top:30px;
+
+    border-bottom:1px solid #555;
+
+    padding-bottom:35px;
+
+}
+
+
+
+.jogos h2{
+
+    margin-bottom:25px;
+
+}
+
+
+
+.lista-jogos{
+
+    display:grid;
+
+    grid-template-columns:repeat(4,1fr);
+
+    gap:25px;
+
+}
+
+
+
+
+
+.game{
+
+    height:170px;
+
+    border:1px solid #555;
+
+    display:flex;
+
+    flex-direction:column;
+
+    justify-content:center;
+
+    align-items:center;
+
+    cursor:pointer;
+
+    transition:.2s;
+
+}
+
+
+
+.game:hover{
+
+    background:#f5f5f5;
+
+}
+
+
+
+.game .emoji{
+
+    font-size:45px;
+
+}
+
+
+
+.game h3{
+
+    margin-top:10px;
+
+    font-size:20px;
+
+}
+
+
+
+.barra{
+
+    width:100px;
+
+    height:8px;
+
+    margin-top:12px;
+
+    background:#444;
+
+}
+
+
+
+
+
+/* ================================================
+   PAINEL INFERIOR
+================================================ */
+
+
+.painel{
+
+    display:grid;
+
+    grid-template-columns:1fr 1fr;
+
+    gap:25px;
+
+    margin-top:30px;
+
+}
+
+
+
+.ranking,
+
+.estatisticas{
+
+    border:1px solid #555;
+
+    padding:20px;
+
+    min-height:150px;
+
+}
+
+
+
+.ranking p,
+
+.estatisticas p{
+
+    margin-top:10px;
+
+}
+
+
+
+
+
+/* ================================================
+   TELA DO JOGO
+================================================ */
+
+#gameCanvas {
+    width: 100%;       /* Ocupa a largura máxima disponível do container */
+    height: auto;      /* Mantém a proporção correta automaticamente */
+    max-width: 900px;  /* Não passa do tamanho original em telas gigantes */
+    max-height: 500px;
+    background: #000;  /* Garante o fundo preto padrão */
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+.game-screen{
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    padding: 10px;
+
+}
+
+
+
+.game-header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    margin-bottom:20px;
+
+}
+
+
+
+canvas{
+
+    border:1px solid #444;
+
+    background:#000;
+
+    display:block;
+
+    margin:auto;
+
+}
+
+/* ================================================
+   FOOTER
+================================================ */
+
+
+footer{
+
+    border-top:1px solid #555;
+
+    padding:15px;
+
+    text-align:center;
+
+    font-size:14px;
+
+}
