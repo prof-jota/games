@@ -16,6 +16,7 @@ function iniciarTetris() {
     let tabuleiro = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
     let score = 0;
     let gameOver = false;
+    let somGameOverTocado = false; // Evita que o som de fim de jogo repita no loop
 
     // Cores dos blocos
     const CORES = [
@@ -66,7 +67,12 @@ function iniciarTetris() {
 
     function mover(dir) {
         pecaAtual.x += dir;
-        if (verificarColisao()) pecaAtual.x -= dir;
+        if (verificarColisao()) {
+            pecaAtual.x -= dir;
+        } else {
+            // EFEITO SONORO: Clique sutil e rápido ao andar de lado
+            if (typeof AudioArcade !== 'undefined') AudioArcade.playBip(200, 0.03, 'sine');
+        }
     }
 
     function cair() {
@@ -94,7 +100,13 @@ function iniciarTetris() {
         }
         const antigaMatrix = pecaAtual.matrix;
         pecaAtual.matrix = novaMatrix;
-        if (verificarColisao()) pecaAtual.matrix = antigaMatrix;
+        
+        if (verificarColisao()) {
+            pecaAtual.matrix = antigaMatrix;
+        } else {
+            // EFEITO SONORO: Som de giro rápido ligeiramente agudo
+            if (typeof AudioArcade !== 'undefined') AudioArcade.playBip(300, 0.05, 'triangle');
+        }
     }
 
     function verificarColisao() {
@@ -113,6 +125,9 @@ function iniciarTetris() {
     }
 
     function fundirPeca() {
+        // EFEITO SONORO: Som de impacto grave e seco ao travar a peça
+        if (typeof AudioArcade !== 'undefined') AudioArcade.playBip(150, 0.08, 'square');
+
         pecaAtual.matrix.forEach((row, r) => {
             row.forEach((val, c) => {
                 if (val !== 0) {
@@ -136,6 +151,9 @@ function iniciarTetris() {
         }
         if (linhasEliminadas > 0) {
             score += [0, 40, 100, 300, 1200][linhasEliminadas];
+            
+            // EFEITO SONORO: Se limpar linha toca o som de sucesso!
+            if (typeof AudioArcade !== 'undefined') AudioArcade.playSucesso();
         }
     }
 
@@ -147,76 +165,3 @@ function iniciarTetris() {
         // Centralizar área do Tetris (Grid vertical)
         const boardWidth = COLS * BLOCK_SIZE;
         const boardHeight = ROWS * BLOCK_SIZE;
-        const offsetX = (canvas.width - boardWidth) / 2;
-        const offsetY = (canvas.height - boardHeight) / 2;
-
-        // Fundo do Grid Ativo
-        ctx.fillStyle = "#000";
-        ctx.fillRect(offsetX, offsetY, boardWidth, boardHeight);
-        ctx.strokeStyle = "#333";
-        ctx.strokeRect(offsetX, offsetY, boardWidth, boardHeight);
-
-        // Desenhar Tabuleiro fixo
-        for (let r = 0; r < ROWS; r++) {
-            for (let c = 0; c < COLS; c++) {
-                if (tabuleiro[r][c] !== 0) {
-                    ctx.fillStyle = tabuleiro[r][c] === 6 ? "#33ffff" : CORES[tabuleiro[r][c]];
-                    ctx.fillRect(offsetX + c * BLOCK_SIZE + 1, offsetY + r * BLOCK_SIZE + 1, BLOCK_SIZE - 2, BLOCK_SIZE - 2);
-                }
-            }
-        }
-
-        // Desenhar Peça Ativa caindo
-        if (!gameOver) {
-            pecaAtual.matrix.forEach((row, r) => {
-                row.forEach((val, c) => {
-                    if (val !== 0) {
-                        ctx.fillStyle = pecaAtual.id === 6 ? "#33ffff" : CORES[pecaAtual.id];
-                        ctx.fillRect(offsetX + (pecaAtual.x + c) * BLOCK_SIZE + 1, offsetY + (pecaAtual.y + r) * BLOCK_SIZE + 1, BLOCK_SIZE - 2, BLOCK_SIZE - 2);
-                    }
-                });
-            });
-        }
-
-        // Interface Lateral
-        ctx.font = "20px 'Courier New'";
-        ctx.fillStyle = "#fff";
-        ctx.textAlign = "left";
-        ctx.fillText(`PONTOS: ${score}`, offsetX + boardWidth + 30, offsetY + 50);
-
-        ctx.font = "14px 'Courier New'";
-        ctx.fillStyle = "#888";
-        ctx.fillText("CONTROLES:", offsetX - 150, offsetY + 50);
-        ctx.fillText("← / → : Mover", offsetX - 150, offsetY + 80);
-        ctx.fillText("↑ : Rotacionar", offsetX - 150, offsetY + 110);
-        ctx.fillText("↓ : Cair rápido", offsetX - 150, offsetY + 140);
-
-        if (gameOver) {
-            clearInterval(tetrisInterval);
-            ctx.fillStyle = "rgba(0,0,0,0.85)";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.font = "40px 'Courier New'";
-            ctx.fillStyle = "#ff3333";
-            ctx.textAlign = "center";
-            ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2);
-        }
-    }
-
-    // Loop de queda (gravidade a cada 500ms)
-    let dropCounter = 0;
-    function updateLoop() {
-        dropCounter += 33; // ~33ms por frame do render
-        if (dropCounter >= 500) {
-            cair();
-            dropCounter = 0;
-        }
-        desenhar();
-    }
-
-    if (tetrisInterval) clearInterval(tetrisInterval);
-    tetrisInterval = setInterval(updateLoop, 33);
-
-    window.limparEventosTetris = () => {
-        window.removeEventListener("keydown", controlarTetris);
-    };
-}
