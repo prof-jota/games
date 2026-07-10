@@ -41,11 +41,18 @@ function iniciarSnake() {
         const pressionouCima = e.key === "ArrowUp" || e.key === "w" || e.key === "W";
         const pressionouBaixo = e.key === "ArrowDown" || e.key === "s" || e.key === "S";
 
+        let direcaoAlterada = false;
+
         // Impede a cobra de voltar na direção oposta instantaneamente
-        if (pressionouEsquerda && dx === 0) { dx = -1; dy = 0; mudouDirecao = true; }
-        if (pressionouDireita && dx === 0) { dx = 1; dy = 0; mudouDirecao = true; }
-        if (pressionouCima && dy === 0) { dx = 0; dy = -1; mudouDirecao = true; }
-        if (pressionouBaixo && dy === 0) { dx = 0; dy = 1; mudouDirecao = true; }
+        if (pressionouEsquerda && dx === 0) { dx = -1; dy = 0; mudouDirecao = true; direcaoAlterada = true; }
+        if (pressionouDireita && dx === 0) { dx = 1; dy = 0; mudouDirecao = true; direcaoAlterada = true; }
+        if (pressionouCima && dy === 0) { dx = 0; dy = -1; mudouDirecao = true; direcaoAlterada = true; }
+        if (pressionouBaixo && dy === 0) { dx = 0; dy = 1; mudouDirecao = true; direcaoAlterada = true; }
+
+        // EFEITO SONORO: Clique sutil e rápido ao mudar de direção
+        if (direcaoAlterada && typeof AudioArcade !== 'undefined') {
+            AudioArcade.playBip(450, 0.02, 'sine');
+        }
     }
 
     function gerarComida() {
@@ -63,6 +70,11 @@ function iniciarSnake() {
     function fimDeJogo() {
         clearInterval(snakeInterval);
         
+        // EFEITO SONORO: Som de erro/derrota ao perder
+        if (typeof AudioArcade !== 'undefined') {
+            AudioArcade.playErro();
+        }
+
         // Tela de Game Over estilizada
         ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -104,45 +116,14 @@ function iniciarSnake() {
         // 2. Verificar se comeu a comida
         if (cabeca.x === comida.x && cabeca.y === comida.y) {
             score += 10;
+
+            // EFEITO SONORO: Som agradável e agudo de comer fruta (Ré agudo)
+            if (typeof AudioArcade !== 'undefined') {
+                AudioArcade.playBip(587.33, 0.08, "triangle");
+            }
+
             gerarComida();
         } else {
             // Se não comeu, remove o último pedaço (mantém o tamanho estável)
             snake.pop();
         }
-
-        // 3. RENDERIZAÇÃO
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Fundo Verde Escuro Retrô
-        ctx.fillStyle = "#112211";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // Desenhar a Comida (Maçã Vermelha)
-        ctx.fillStyle = "#ff3333";
-        ctx.fillRect(comida.x * gridSize + 2, comida.y * gridSize + 2, gridSize - 4, gridSize - 4);
-
-        // Desenhar a Cobra
-        snake.forEach((pedaco, index) => {
-            // A cabeça tem uma cor levemente diferente do corpo
-            ctx.fillStyle = index === 0 ? "#00ff66" : "#00aa44";
-            ctx.fillRect(pedaco.x * gridSize + 1, pedaco.y * gridSize + 1, gridSize - 2, gridSize - 2);
-        });
-
-        // Desenhar Placar
-        ctx.font = "20px 'Courier New'";
-        ctx.fillStyle = "#ebf1ee";
-        ctx.textAlign = "left";
-        ctx.fillText(`SCORE: ${score}`, 20, 35);
-    }
-
-    // Cancela loops antigos antes de iniciar
-    if (snakeInterval) clearInterval(snakeInterval);
-    
-    // Inicia o loop (Aproximadamente 100ms por frame para dar velocidade de jogo retrô)
-    snakeInterval = setInterval(atualizarJogo, 100);
-
-    // Função de limpeza global para quando sairmos do jogo
-    window.limparEventosSnake = () => {
-        window.removeEventListener("keydown", mudarDirecaoTeclado);
-    };
-}
