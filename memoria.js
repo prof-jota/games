@@ -53,6 +53,7 @@ function iniciarMemoria() {
     let travado = false;
     let score = 0;
     let movimentos = 0;
+    let somVitoriaTocado = false; // Evita que o som de vitória fique repetindo no loop
 
     // Gerenciar Cliques
     canvas.addEventListener("click", tratarClique);
@@ -78,6 +79,9 @@ function iniciarMemoria() {
             if (mouseX >= carta.x && mouseX <= carta.x + cardWidth &&
                 mouseY >= carta.y && mouseY <= carta.y + cardHeight) {
                 
+                // EFEITO SONORO: Clique sutil ao selecionar/virar a carta
+                if (typeof AudioArcade !== 'undefined') AudioArcade.playBip(350, 0.05, 'sine');
+
                 carta.virada = true;
                 selecionadas.push(carta);
 
@@ -93,11 +97,17 @@ function iniciarMemoria() {
                         travado = false;
                         score += 10;
 
+                        // EFEITO SONORO: Sucesso ao encontrar o par correto!
+                        if (typeof AudioArcade !== 'undefined') AudioArcade.playSucesso();
+
                         // Verificar Vitória
                         if (cartas.every(c => c.revelada)) {
                             score += 50; // Bônus de vitória
                         }
                     } else {
+                        // EFEITO SONORO: Erro ao escolher cartas diferentes
+                        if (typeof AudioArcade !== 'undefined') AudioArcade.playErro();
+
                         // Não é par: desvira após 1 segundo
                         setTimeout(() => {
                             selecionadas[0].virada = false;
@@ -161,6 +171,15 @@ function iniciarMemoria() {
             ctx.fillStyle = "#00ff66";
             ctx.textAlign = "center";
             ctx.fillText("VOCÊ VENCEU!", canvas.width / 2, canvas.height / 2);
+
+            // EFEITO SONORO: Toca uma fanfarra/som longo de vitória apenas uma vez
+            if (!somVitoriaTocado && typeof AudioArcade !== 'undefined') {
+                somVitoriaTocado = true;
+                AudioArcade.playBip(523.25, 0.1, "triangle"); // Dó
+                setTimeout(() => AudioArcade.playBip(659.25, 0.1, "triangle"), 100); // Mi
+                setTimeout(() => AudioArcade.playBip(783.99, 0.1, "triangle"), 200); // Sol
+                setTimeout(() => AudioArcade.playBip(1046.50, 0.4, "triangle"), 300); // Dó oitava acima
+            }
         }
     }
 
