@@ -73,32 +73,44 @@ function iniciarPong() {
         ballX += ballSpeedX;
         ballY += ballSpeedY;
 
-        // Colisão com as paredes superiores/inferiores
+        // Colisão com as paredes superiores/inferiores (Ricochete)
         if (ballY - ballRadius < 0 || ballY + ballRadius > canvas.height) {
             ballSpeedY = -ballSpeedY;
+            // EFEITO SONORO: Bip rápido e agudo de parede
+            if (typeof AudioArcade !== 'undefined') AudioArcade.playBip(550, 0.05, "triangle");
         }
 
-        // Colisão com a raquete do Player
+        // Colisão com a raquete do Player (Esquerda)
         if (ballX - ballRadius < paddleWidth + 20) { // 20 é o recuo da raquete na tela
             if (ballY > playerY && ballY < playerY + paddleHeight) {
                 ballSpeedX = -ballSpeedX;
                 // Efeito baseado em onde a bola bateu na raquete
                 let deltaY = ballY - (playerY + paddleHeight / 2);
                 ballSpeedY = deltaY * 0.3;
+                
+                // EFEITO SONORO: Rebate clássico de Arcade 8-bit
+                if (typeof AudioArcade !== 'undefined') AudioArcade.playBip(440, 0.08, "square");
             } else if (ballX < 0) {
                 computerScore++;
+                // EFEITO SONORO: Computador pontuou (som de erro)
+                if (typeof AudioArcade !== 'undefined') AudioArcade.playErro();
                 resetBola();
             }
         }
 
-        // Colisão com a raquete do Computador
+        // Colisão com a raquete do Computador (Direita)
         if (ballX + ballRadius > canvas.width - paddleWidth - 20) {
             if (ballY > computerY && ballY < computerY + paddleHeight) {
                 ballSpeedX = -ballSpeedX;
                 let deltaY = ballY - (computerY + paddleHeight / 2);
                 ballSpeedY = deltaY * 0.3;
+                
+                // EFEITO SONORO: Rebate clássico de Arcade 8-bit
+                if (typeof AudioArcade !== 'undefined') AudioArcade.playBip(440, 0.08, "square");
             } else if (ballX > canvas.width) {
                 playerScore++;
+                // EFEITO SONORO: Você pontuou (som de sucesso!)
+                if (typeof AudioArcade !== 'undefined') AudioArcade.playSucesso();
                 resetBola();
             }
         }
