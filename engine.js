@@ -1,8 +1,59 @@
 /* ==================================================
    ARCADE WEB SYSTEM
    ENGINE PRINCIPAL
-   V0.1.3 (Correção do Loop de Loading)
+   V0.1.4 (Integração do Sistema de Áudio Retro)
 ================================================== */
+
+// ================================================
+// SISTEMA DE ÁUDIO RETRÔ (Web Audio API Nativa)
+// ================================================
+const AudioArcade = {
+    ctx: null,
+
+    init() {
+        if (!this.ctx) {
+            // Inicializa o contexto de áudio na primeira interação do usuário
+            this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+    },
+
+    playBip(frequencia = 440, duracao = 0.1, tipo = "square") {
+        this.init();
+        if (!this.ctx) return;
+
+        // Cria os nós de oscilador e ganho (volume)
+        const oscilador = this.ctx.createOscillator();
+        const ganho = this.ctx.createGain();
+
+        oscilador.type = tipo; // 'sine', 'square', 'sawtooth', 'triangle'
+        oscilador.frequency.setValueAtTime(frequencia, this.ctx.currentTime);
+
+        // Configura o volume com um leve fade-out para não dar estalo
+        ganho.gain.setValueAtTime(0.15, this.ctx.currentTime); // Volume em 15%
+        ganho.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duracao);
+
+        // Conecta tudo aos alto-falantes
+        oscilador.connect(ganho);
+        ganho.connect(this.ctx.destination);
+
+        // Toca e desliga
+        oscilador.start();
+        oscilador.stop(this.ctx.currentTime + duracao);
+    },
+
+    playSucesso() {
+        // Um efeito clássico de subida rápida de notas (Arpejo)
+        this.playBip(523.25, 0.08, "square"); // Nota Dó
+        setTimeout(() => this.playBip(659.25, 0.08, "square"), 80); // Nota Mi
+        setTimeout(() => this.playBip(783.99, 0.15, "square"), 160); // Nota Sol
+    },
+
+    playErro() {
+        // Um som descendente e mais grave/áspero
+        this.playBip(293.66, 0.12, "sawtooth"); // Nota Ré
+        setTimeout(() => this.playBip(220.00, 0.25, "sawtooth"), 100); // Nota Lá
+    }
+};
 
 // ================================================
 // ELEMENTOS DA INTERFACE
@@ -23,6 +74,9 @@ let jogoAtual = null;
 // ================================================
 function abrirJogo(nome){
     console.log("Abrindo jogo:", nome);
+
+    // Inicializa o áudio assim que o usuário clica para jogar algo
+    AudioArcade.init();
 
     menu.style.display = "none";
     gameScreen.style.display = "block";
@@ -47,32 +101,37 @@ function abrirJogo(nome){
             iniciarTetris();
         } 
         else {
-            exibirErroEngine("EM DESENVOLVIMENTO...");
+            exibirErroEngine("ERRO: ARQUIVO DO JOGO NÃO ENCONTRADO.");
         }
-    }, 1000);
+    }, 1000); 
 }
 
 // ================================================
-// FECHAR JOGO (Atualizado com todas as limpezas)
+// BOTÃO VOLTAR / FECHAR JOGO
 // ================================================
-function fecharJogo(){
-    console.log("Voltando ao menu");
+const btnVoltar = document.getElementById("btnVoltar");
+if(btnVoltar){
+    btnVoltar.addEventListener("click", fecharJogo);
+}
 
-    if (jogoAtual === "pong") {
-        if (typeof pongInterval !== 'undefined' && pongInterval !== null) clearInterval(pongInterval);
-        if (typeof window.limparEventosPong === 'function') window.limparEventosPong();
+function fecharJogo(){
+    console.log("Fechando jogo atual...");
+
+    if (jogoAtual === "pong" && typeof window.limparEventosPong === "function") {
+        window.limparEventosPong();
+        if (typeof pongInterval !== "undefined") clearInterval(pongInterval);
     } 
-    else if (jogoAtual === "snake") {
-        if (typeof snakeInterval !== 'undefined' && snakeInterval !== null) clearInterval(snakeInterval);
-        if (typeof window.limparEventosSnake === 'function') window.limparEventosSnake();
-    }
-    else if (jogoAtual === "memoria") {
-        if (typeof memoriaRenderInterval !== 'undefined' && memoriaRenderInterval !== null) clearInterval(memoriaRenderInterval);
-        if (typeof window.limparEventosMemoria === 'function') window.limparEventosMemoria();
-    }
-    else if (jogoAtual === "tetris") {
-        if (typeof tetrisInterval !== 'undefined' && tetrisInterval !== null) clearInterval(tetrisInterval);
-        if (typeof window.limparEventosTetris === 'function') window.limparEventosTetris();
+    else if (jogoAtual === "snake" && typeof window.limparEventosSnake === "function") {
+        window.limparEventosSnake();
+        if (typeof snakeInterval !== "undefined") clearInterval(snakeInterval);
+    } 
+    else if (jogoAtual === "memoria" && typeof window.limparEventosMemoria === "function") {
+        window.limparEventosMemoria();
+        if (typeof memoriaRenderInterval !== "undefined") clearInterval(memoriaRenderInterval);
+    } 
+    else if (jogoAtual === "tetris" && typeof window.limparEventosTetris === "function") {
+        window.limparEventosTetris();
+        if (typeof tetrisInterval !== "undefined") clearInterval(tetrisInterval);
     }
 
     limparCanvas();
@@ -80,6 +139,7 @@ function fecharJogo(){
     menu.style.display = "block";
     jogoAtual = null;
 }
+
 // ================================================
 // TELA DE LOADING/JOGO
 // ================================================
@@ -115,12 +175,6 @@ function exibirErroEngine(mensagem) {
     ctx.fillText(mensagem, canvas.width / 2, canvas.height / 2);
 }
 
-// ================================================
-// LIMPAR CANVAS
-// ================================================
 function limparCanvas(){
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
-
-// Configura o botão voltar da interface caso ele ainda não tenha sido mapeado aqui
-document.getElementById("btnVoltar").addEventListener("click", fecharJogo);
