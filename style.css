@@ -1,0 +1,244 @@
+/* ==================================================
+   ARCADE WEB SYSTEM - STYLE V0.2
+================================================== */
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    background:#eeeeee;
+    color:#222;
+    font-family:"Courier New", monospace;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+.arcade{
+    width: 100%;
+    max-width: 1200px;
+    min-height: 100vh;
+    background: white;
+    border: 1px solid #444;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+}
+
+.header{
+    height:65px;
+    border-bottom:1px solid #444;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 25px;
+}
+
+.logo{
+    font-size:24px;
+    font-weight:bold;
+}
+
+.pesquisa{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.pesquisa input{
+    width:320px;
+    padding:8px;
+    background:white;
+    color:#222;
+    border:1px solid #555;
+    font-family:inherit;
+}
+
+.usuario{
+    font-size:18px;
+}
+
+#menu{
+    padding:25px;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.destaque{
+    border-bottom:1px solid #555;
+    padding-bottom:30px;
+    width: 100%;
+}
+
+.titulo-area{
+    display:flex;
+    justify-content:space-between;
+    margin-bottom:20px;
+}
+
+.titulo-area h2{
+    font-size:22px;
+}
+
+.banner{
+    height:240px;
+    border:1px solid #555;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    gap:18px;
+    width: 100%;
+}
+
+.banner h1{
+    font-size:48px;
+}
+
+.banner p{
+    font-size:20px;
+}
+
+button{
+    background:white;
+    color:#222;
+    border:1px solid #444;
+    padding:12px 40px;
+    cursor:pointer;
+    font-family:inherit;
+    font-size:16px;
+}
+
+button:hover{
+    background:#eeeeee;
+}
+
+.jogos{
+    margin-top:30px;
+    border-bottom:1px solid #555;
+    padding-bottom:35px;
+    width: 100%;
+}
+
+.jogos h2{
+    margin-bottom:25px;
+}
+
+.lista-jogos{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:25px;
+    width: 100%;
+}
+
+.game{
+    height:170px;
+    border:1px solid #555;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    cursor:pointer;
+    transition:.2s;
+    background: white;
+}
+
+.game:hover{
+    background:#f5f5f5;
+}
+
+.game .emoji{
+    font-size:45px;
+}
+
+.game h3{
+    margin-top:10px;
+    font-size:20px;
+}
+
+.barra{
+    width:100px;
+    height:8px;
+    margin-top:12px;
+    background:#444;
+}
+
+.painel{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:25px;
+    margin-top:30px;
+    width: 100%;
+}
+
+.ranking,
+.estatisticas{
+    border:1px solid #555;
+    padding:20px;
+    min-height:150px;
+    background: white;
+}
+
+.ranking p,
+.estatisticas p{
+    margin-top:10px;
+}
+
+#gameCanvas {
+    width: 100%;
+    height: auto;
+    max-width: 900px;
+    max-height: 500px;
+    background: #000;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.game-screen{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    padding: 10px;
+}
+
+.game-header{
+    display:flex;
+    justify-content:space-between;
+    width: 100%;
+    max-width: 900px;
+    margin-bottom:20px;
+}
+
+canvas{
+    border:1px solid #444;
+    background:#000;
+    display:block;
+    margin:auto;
+}
+
+footer{
+    border-top:1px solid #555;
+    padding:15px;
+    text-align:center;
+    font-size:14px;
+}
+
+@media (max-width: 992px) {
+    .lista-jogos { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+    #menu { padding: 15px; }
+    .header { height: auto; padding: 15px 20px; flex-direction: column; gap: 15px; align-items: center; }
+    .pesquisa input { width: 100%; }
+    .banner { height: auto; min-height: 200px; padding: 25px 15px; }
+    .banner h1 { size: 32px; }
+    .banner p { font-size: 16px; text-align: center; }
+    .lista-jogos { grid-template-columns: 1fr; gap: 15px; }
+    .painel { grid-template-columns: 1fr; gap: 15px; }
+}

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🎮 Arcade Web</title>
+    <link rel="stylesheet" href="style.css?v=1">
+    <style>
+        .banner { transition: opacity 0.4s ease-in-out; }
+        
+        .lista-atualizacoes {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            text-align: left;
+        }
+        .lista-atualizacoes li {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #aaa;
+            line-height: 1.4;
+            border-bottom: 1px dashed #2a2a40;
+            padding-bottom: 8px;
+        }
+        .lista-atualizacoes li:last-child {
+            border-bottom: none;
+        }
+        .lista-atualizacoes strong {
+            color: #00ffaa;
+        }
+
+        .painel {
+            grid-template-columns: repeat(3, 1fr) !important;
+        }
+        @media (max-width: 768px) {
+            .painel {
+                grid-template-columns: 1fr !important;
+            }
+        }
+
+        #gameScreen {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="arcade">
+    <header class="header">
+        <div class="logo">🎮 ARCADE WEB</div>
+        <div class="pesquisa">
+            🔍 <input type="text" id="campoPesquisa" placeholder="Pesquisar">
+        </div>
+        <div class="usuario">
+            <span>🌙</span> 👤 <input type="text" id="nomeUsuario" value="Jogador" class="input-nome" title="Clique para mudar seu nome">
+        </div>
+    </header>
+
+    <main id="menu">
+        <section class="destaque">
+            <div class="titulo-area">
+                <h2>⭐ Destaque da Semana</h2>
+            </div>
+            <div class="banner" id="bannerRotativo">
+                <h1 id="bannerTitulo">🏓 PONG</h1>
+                <p id="bannerDescricao">"Desafie seus colegas!"</p>
+                <button class="btn-jogar" id="bannerBtn">JOGAR AGORA</button>
+            </div>
+        </section>
+
+        <section class="jogos-section">
+            <h2>🕹️ Escolha seu Jogo</h2>
+            <div id="listaJogos" class="lista-jogos"></div>
+        </section>
+
+        <section class="painel">
+            <div class="ranking">
+                <h2>🏆 Ranking</h2>
+                <p id="playerRank">1º Djonatan - 0</p>
+                <p>2º Maria - 8500</p>
+                <p>3º João - 7200</p>
+            </div>
+
+            <div class="estatisticas">
+                <h2>🎯 Estatísticas</h2>
+                <p>Jogos instalados: 5</p>
+                <p id="totalPartidas">Partidas: 0</p>
+                <p>Sistema: ONLINE</p>
+            </div>
+
+            <div class="estatisticas">
+                <h2>📢 Atualizações (v1.2)</h2>
+                <ul class="lista-atualizacoes">
+                    <li><strong>Mobile:</strong> Suporte a toque e gestos no Quiz, Snake e Tetris.</li>
+                    <li><strong>IA Inteligente:</strong> Jogo da Velha agora possui modo defensivo.</li>
+                    <li><strong>Áudio:</strong> Correção nos sintetizadores de efeitos retrô.</li>
+                </ul>
+            </div>
+        </section>
+    </main>
+
+    <section id="gameScreen" class="game-screen">
+        <div class="game-header">
+            <button id="btnVoltar">← VOLTAR</button>
+            <h2 id="tituloJogo">JOGO</h2>
+        </div>
+        <canvas id="gameCanvas" width="900" height="500"></canvas>
+    </section>
+
+    <footer>ARCADE WEB SYSTEM © 2026</footer>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const jogosDisponiveis = [
+            { id: "pong", titulo: "PONG", emoji: "🏓", desc: "Desafie seus colegas no clássico dos arcades!" },
+            { id: "snake", titulo: "SNAKE", emoji: "🐍", desc: "Agora com controle por gestos (Swipe) para celular!" },
+            { id: "tetris", titulo: "TETRIS", emoji: "🧱", desc: "Encaixe os blocos! Toque rápido para girar." },
+            { id: "velha", titulo: "JOGO DA VELHA", emoji: "❌", desc: "Consegue vencer nossa nova inteligência artificial?" },
+            { id: "quiz", titulo: "QUIZ", emoji: "🧠", desc: "Teste seus conhecimentos em programação!" }
+        ];
+
+        const containerJogos = document.getElementById("listaJogos");
+        containerJogos.innerHTML = "";
+        jogosDisponiveis.forEach(j => {
+            const card = document.createElement("div");
+            card.className = "game";
+            card.innerHTML = `
+                <div class="emoji">${j.emoji}</div>
+                <h3>${j.titulo}</h3>
+                <div class="barra"></div>
+            `;
+            card.addEventListener("click", () => {
+                if (typeof abrirJogo === 'function') abrirJogo(j.id);
+            });
+            containerJogos.appendChild(card);
+        });
+
+        let indiceAtual = 0;
+        const elTitulo = document.getElementById("bannerTitulo");
+        const elDesc = document.getElementById("bannerDescricao");
+        const elBtn = document.getElementById("bannerBtn");
+        const elBanner = document.getElementById("bannerRotativo");
+
+        function alternarBanner() {
+            indiceAtual = (indiceAtual + 1) % jogosDisponiveis.length;
+            const jogo = jogosDisponiveis[indiceAtual];
+
+            elBanner.style.opacity = 0.1;
+            setTimeout(() => {
+                elTitulo.innerText = `${jogo.emoji} ${jogo.titulo}`;
+                elDesc.innerText = `"${jogo.desc}"`;
+                elBanner.style.opacity = 1;
+            }, 400);
+        }
+
+        setInterval(alternarBanner, 5000);
+
+        elBtn.addEventListener("click", () => {
+            const jogoAtual = jogosDisponiveis[indiceAtual];
+            if (typeof abrirJogo === 'function') abrirJogo(jogoAtual.id);
+        });
+
+        document.getElementById("btnVoltar").addEventListener("click", () => {
+            document.getElementById("gameScreen").style.display = "none";
+            document.getElementById("menu").style.display = "flex";
+            if (typeof fecharJogoAnterior === 'function') fecharJogoAnterior();
+        });
+    });
+</script>
+
+<script src="audio.js"></script>
+<script src="engine.js"></script>
+<script src="pong.js"></script>
+<script src="snake.js"></script>
+<script src="tetris.js"></script>
+<script src="velha.js"></script>
+<script src="quiz.js"></script>
+
+</body>
+</html>
