@@ -83,7 +83,7 @@
 
             <div class="estatisticas">
                 <h2>🎯 Estatísticas</h2>
-                <p>Jogos instalados: 5</p>
+                <p>Jogos instalados: 8</p> <!-- Atualizado para 8 jogos -->
                 <p id="totalPartidas">Partidas: 0</p>
                 <p>Sistema: ONLINE</p>
             </div>
@@ -91,9 +91,9 @@
             <div class="estatisticas">
                 <h2>📢 Atualizações (v1.2)</h2>
                 <ul class="lista-atualizacoes">
-                    <li><strong>Mobile:</strong> Suporte a toque e gestos no Quiz, Snake e Tetris.</li>
-                    <li><strong>IA Inteligente:</strong> Jogo da Velha agora possui modo defensivo.</li>
-                    <li><strong>Áudio:</strong> Correção nos sintetizadores de efeitos retrô.</li>
+                    <li><strong>Novos Jogos:</strong> Adicionados os clássicos Memória, Flappy Bird e Space Invaders!</li>
+                    <li><strong>Mobile:</strong> Suporte a toque e gestos calibrados nos novos games.</li>
+                    <li><strong>Áudio:</strong> Integração total com o sintetizador AudioArcade.</li>
                 </ul>
             </div>
         </section>
@@ -112,12 +112,16 @@
 
 <script>
     document.addEventListener("DOMContentLoaded", () => {
+        // Lista expandida com os novos 3 jogos integrados
         const jogosDisponiveis = [
             { id: "pong", titulo: "PONG", emoji: "🏓", desc: "Desafie seus colegas no clássico dos arcades!" },
             { id: "snake", titulo: "SNAKE", emoji: "🐍", desc: "Agora com controle por gestos (Swipe) para celular!" },
             { id: "tetris", titulo: "TETRIS", emoji: "🧱", desc: "Encaixe os blocos! Toque rápido para girar." },
             { id: "velha", titulo: "JOGO DA VELHA", emoji: "❌", desc: "Consegue vencer nossa nova inteligência artificial?" },
-            { id: "quiz", titulo: "QUIZ", emoji: "🧠", desc: "Teste seus conhecimentos em programação!" }
+            { id: "quiz", titulo: "QUIZ", emoji: "🧠", desc: "Teste seus conhecimentos em programação!" },
+            { id: "memoria", titulo: "MEMÓRIA", emoji: "🧠", desc: "Encontre os pares de cores e teste sua mente!" },
+            { id: "flappy", titulo: "FLAPPY BIRD", emoji: "🐦", desc: "Desvie dos canos e tente bater seu recorde!" },
+            { id: "invaders", titulo: "SPACE INVADERS", emoji: "🛸", desc: "Defenda a galáxia do ataque alienígena pixelado!" }
         ];
 
         const containerJogos = document.getElementById("listaJogos");
@@ -176,6 +180,9 @@
 <script src="tetris.js"></script>
 <script src="velha.js"></script>
 <script src="quiz.js"></script>
+<script src="memoria.js"></script>   
+<script src="flappy.js"></script>   
+<script src="invaders.js"></script>
 
 </body>
 </html>
