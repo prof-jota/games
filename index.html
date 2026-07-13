@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🎮 Arcade Web</title>
+    <link rel="stylesheet" href="style.css?v=1">
+    <style>
+        .banner { transition: opacity 0.4s ease-in-out; }
+        
+        .lista-atualizacoes {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            text-align: left;
+        }
+        .lista-atualizacoes li {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #aaa;
+            line-height: 1.4;
+            border-bottom: 1px dashed #2a2a40;
+            padding-bottom: 8px;
+        }
+        .lista-atualizacoes li:last-child {
+            border-bottom: none;
+        }
+        .lista-atualizacoes strong {
+            color: #00ffaa;
+        }
+
+        .painel {
+            grid-template-columns: repeat(3, 1fr) !important;
+        }
+        @media (max-width: 768px) {
+            .painel {
+                grid-template-columns: 1fr !important;
+            }
+        }
+
+        #gameScreen {
+            display: none;
+        }
+
+        /* --- NOVO ESTILO DO MODAL COMPATÍVEL COM LIGHT MODE --- */
+        .arcade-modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(238, 238, 238, 0.85); /* Fundo cinza claro translúcido */
+            display: flex; justify-content: center; align-items: center;
+            z-index: 9999;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .arcade-modal {
+            background: #ffffff;
+            border: 1px solid #444; /* Combinando com a borda geral do arcade */
+            padding: 35px 30px;
+            text-align: center;
+            max-width: 440px;
+            width: 90%;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            color: #222;
+        }
+        .arcade-modal h3 {
+            color: #222;
+            margin-bottom: 15px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        .arcade-modal p {
+            font-size: 14px;
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        .arcade-modal input {
+            width: 85%;
+            padding: 10px;
+            background: #ffffff;
+            border: 1px solid #555;
+            color: #222;
+            font-size: 18px;
+            text-align: center;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            font-family: inherit;
+            transition: border-color 0.2s, background-color 0.2s;
+        }
+        .arcade-modal input:focus {
+            border-color: #222;
+            outline: none;
+            background: #fafafa;
+        }
+        .arcade-modal button {
+            background: #ffffff;
+            color: #222;
+            border: 1px solid #444;
+            padding: 12px 40px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 16px;
+            transition: 0.2s;
+        }
+        .arcade-modal button:hover {
+            background: #eeeeee;
+        }
+    </style>
+</head>
+<body>
+
+<div class="arcade">
+    <header class="header">
+        <div class="logo">🎮 ARCADE WEB</div>
+        <div class="pesquisa">
+            🔍 <input type="text" id="campoPesquisa" placeholder="Pesquisar">
+        </div>
+        <div class="usuario">
+            <span>🌙</span> 👤 <input type="text" id="nomeUsuario" value="Jogador" title="Clique para mudar seu nome">
+        </div>
+    </header>
+
+    <main id="menu">
+        <section class="destaque">
+            <div class="titulo-area">
+                <h2>⭐ Destaque da Semana</h2>
+            </div>
+            <div class="banner" id="bannerRotativo">
+                <h1 id="bannerTitulo">🏓 PONG</h1>
+                <p id="bannerDescricao">"Desafie seus colegas!"</p>
+                <button class="btn-jogar" id="bannerBtn">JOGAR AGORA</button>
+            </div>
+        </section>
+
+        <section class="jogos-section">
+            <h2>🕹️ Escolha seu Jogo</h2>
+            <div id="listaJogos" class="lista-jogos"></div>
+        </section>
+
+        <section class="painel">
+            <div class="ranking">
+                <h2>🏆 Ranking Geral</h2>
+                <div id="containerRankingGeral">
+                    <!-- Será preenchido dinamicamente com o campeão de todos os tempos -->
+                </div>
+                <hr style="border: 0; border-top: 1px dashed #2a2a40; margin: 10px 0;">
+                <p style="font-size: 11px; color: #555;">Outros Desafiantes:</p>
+            </div>
+
+            <div class="estatisticas">
+                <h2>🎯 Estatísticas</h2>
+                <p id="totalJogosInstalados">Jogos instalados: 8</p>
+                <p id="totalPartidas">Partidas: 0</p>
+                <p>Sistema: ONLINE</p>
+            </div>
+
+            <div class="estatisticas">
+                <h2>📢 Atualizações (v1.3)</h2>
+                <ul class="lista-atualizacoes">
+                    <li><strong>Recordes Globais:</strong> Agora os cards exibem o nome do campeão de cada jogo!</li>
+                    <li><strong>Hall da Fama:</strong> A aba de ranking calcula em tempo real o maior pontuador de todos os jogos instalados.</li>
+                    <li><strong>Segurança de Recordes:</strong> Alerta de cadastro de nome adicionado antes de iniciar as partidas.</li>
+                </ul>
+            </div>
+        </section>
+    </main>
+
+    <section id="gameScreen" class="game-screen">
+        <div class="game-header">
+            <div style="display: flex; gap: 10px;">
+                <button id="btnVoltar">← VOLTAR</button>
+                <button id="btnRestart">🔄 RESTART</button>
+            </div>
+            <h2 id="tituloJogo">JOGO</h2>
+        </div>
+        <canvas id="gameCanvas" width="900" height="500"></canvas>
+    </section>
+
+    <footer>ARCADE WEB SYSTEM © 2026</footer>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        // Definição exata dos 8 jogos suportados pelo sistema
+        const jogosDisponiveis = [
+            { id: "pong", titulo: "PONG", emoji: "🏓", desc: "Desafie seus colegas no clássico dos arcades!" },
+            { id: "snake", titulo: "SNAKE", emoji: "🐍", desc: "Agora com controle por gestos (Swipe) para celular!" },
+            { id: "tetris", titulo: "TETRIS", emoji: "🧱", desc: "Encaixe os blocks! Toque rápido para girar." },
+            { id: "velha", titulo: "JOGO DA VELHA", emoji: "❌", desc: "Consegue vencer nossa nova inteligência artificial?" },
+            { id: "memoria", titulo: "MEMÓRIA", emoji: "🕹️", desc: "Encontre os pares de cores e teste sua mente!" },
+            { id: "flappy", titulo: "FLAPPY BIRD", emoji: "🐦", desc: "Desvie dos canos e tente bater seu recorde!" },
+            { id: "invaders", titulo: "SPACE INVADERS", emoji: "🛸", desc: "Defenda a galáxia do ataque alienígena pixelado!" },
+            { id: "pacman", titulo: "PAC-MAN", emoji: "🟡", desc: "Coma as pastilhas e fuja do Blinky no labirinto clássico!" }
+        ];
+
+        // Sincroniza o valor de entrada do input superior de usuário com o localStorage
+        const inputUsuario = document.getElementById("nomeUsuario");
+        const nomeSalvo = localStorage.getItem("arcade_jogador_atual");
+        if (nomeSalvo) {
+            inputUsuario.value = nomeSalvo;
+        }
+
+        inputUsuario.addEventListener("input", () => {
+            let valorValido = inputUsuario.value.trim().toUpperCase();
+            if (valorValido !== "") {
+                localStorage.setItem("arcade_jogador_atual", valorValido);
+            }
+        });
+
+        // Interface global de scores integrada
+        window.ScoreArcade = {
+            getHighScore(idJogo) {
+                return parseInt(localStorage.getItem(`arcade_high_${idJogo}`)) || 0;
+            },
+            getHighScoreUser(idJogo) {
+                return localStorage.getItem(`arcade_user_${idJogo}`) || "Ninguém";
+            },
+            atualizarPontuacao(idJogo, scoreAtual) {
+                const highScore = this.getHighScore(idJogo);
+                if (scoreAtual > highScore) {
+                    const nomeAtual = inputUsuario.value.trim().toUpperCase() || "JOGADOR";
+                    localStorage.setItem(`arcade_high_${idJogo}`, scoreAtual);
+                    localStorage.setItem(`arcade_user_${idJogo}`, nomeAtual);
+                    return true;
+                }
+                return false;
+            },
+            // Verifica o nome do usuário; se estiver vazio ou com o padrão "Jogador", exige cadastro antes de jogar
+            verificarRegistroAntesDeJogar(callbackIniciar) {
+                const nomeAtual = inputUsuario.value.trim();
+                if (!nomeAtual || nomeAtual.toLowerCase() === "jogador" || nomeAtual === "") {
+                    exibirModalCadastro(callbackIniciar);
+                } else {
+                    callbackIniciar();
+                }
+            }
+        };
+
+        // Modal de Registro integrado perfeitamente ao estilo geral da página
+        function exibirModalCadastro(callbackSucesso) {
+            // Se já existir um modal, remove para não duplicar
+            const modalAntigo = document.getElementById("modalCadastroArcade");
+            if (modalAntigo) modalAntigo.remove();
+
+            const modalOverlay = document.createElement("div");
+            modalOverlay.id = "modalCadastroArcade";
+            modalOverlay.className = "arcade-modal-overlay";
+            modalOverlay.innerHTML = `
+                <div class="arcade-modal">
+                    <h3>📢 REGISTRE SEU NOME</h3>
+                    <p>Você está acessando como "Jogador". Para computar seus recordes e pontuações nas tabelas, configure sua TAG personalizada:</p>
+                    <input type="text" id="inputNomeRegistro" maxlength="12" placeholder="Digite seu nome" autofocus>
+                    
+                    <!-- Alerta integrado de erro em estilo limpo (oculto por padrão) -->
+                    <div id="erroRegistroArcade" style="color: #ff3366; font-size: 13px; font-weight: bold; margin-bottom: 20px; display: none; text-transform: uppercase;">
+                        [ ERRO: DIGITE UM NOME DIFERENTE DE 'JOGADOR' ]
+                    </div>
+
+                    <div>
+                        <button id="btnConfirmarRegistro">GRAVAR & JOGAR</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modalOverlay);
+
+            const inputModal = document.getElementById("inputNomeRegistro");
+            const btnConfirmar = document.getElementById("btnConfirmarRegistro");
+            const msgErro = document.getElementById("erroRegistroArcade");
+
+            btnConfirmar.addEventListener("click", () => {
+                const nomeInserido = inputModal.value.trim().toUpperCase();
+                if (nomeInserido !== "" && nomeInserido !== "JOGADOR") {
+                    inputUsuario.value = nomeInserido;
+                    localStorage.setItem("arcade_jogador_atual", nomeInserido);
+                    modalOverlay.remove();
+                    callbackSucesso();
+                } else {
+                    // Exibe o erro no estilo minimalista
+                    msgErro.style.display = "block";
+                    inputModal.style.borderColor = "#ff3366";
+                    inputModal.style.backgroundColor = "#fff5f5";
+                    inputModal.focus();
+                }
+            });
+
+            // Reseta a estilização se o usuário recomeçar a digitar
+            inputModal.addEventListener("input", () => {
+                msgErro.style.display = "none";
+                inputModal.style.borderColor = "#555";
+                inputModal.style.backgroundColor = "#ffffff";
+            });
+
+            // Permite submeter pressionando "Enter"
+            inputModal.addEventListener("keypress", (e) => {
+                if (e.key === "Enter") btnConfirmar.click();
+            });
+        }
+
+        // Renderiza o menu e atualiza o ranking geral na tela lateral
+        function renderizarMenuERanking() {
+            const containerJogos = document.getElementById("listaJogos");
+            containerJogos.innerHTML = "";
+            
+            let maiorPontuacaoAbsoluta = -1;
+            let campeaoAbsolutoNome = "Ninguém";
+            let campeaoAbsolutoJogo = "Nenhum";
+
+            jogosDisponiveis.forEach(j => {
+                const recordeSalvo = window.ScoreArcade.getHighScore(j.id);
+                const usuarioRecorde = window.ScoreArcade.getHighScoreUser(j.id);
+
+                if (recordeSalvo > maiorPontuacaoAbsoluta) {
+                    maiorPontuacaoAbsoluta = recordeSalvo;
+                    campeaoAbsolutoNome = usuarioRecorde;
+                    campeaoAbsolutoJogo = j.titulo;
+                }
+
+                const card = document.createElement("div");
+                card.className = "game";
+                card.innerHTML = `
+                    <div class="emoji">${j.emoji}</div>
+                    <h3>${j.titulo}</h3>
+                    <div class="recorde-card" style="font-size: 11px; color: #ff3366; margin-top: 5px; font-weight: bold; letter-spacing: 0.5px; line-height: 1.3;">
+                        👑 ${usuarioRecorde.toUpperCase()}<br>
+                        HI: ${String(recordeSalvo).padStart(4, '0')}
+                    </div>
+                    <div class="barra"></div>
+                `;
+                card.addEventListener("click", () => {
+                    window.ScoreArcade.verificarRegistroAntesDeJogar(() => {
+                        if (typeof abrirJogo === 'function') abrirJogo(j.id);
+                    });
+                });
+                containerJogos.appendChild(card);
+            });
+
+            const containerRank = document.getElementById("containerRankingGeral");
+            if (maiorPontuacaoAbsoluta > 0) {
+                containerRank.innerHTML = `
+                    <p style="color: #222; font-weight: bold; font-size: 16px; margin: 5px 0;">
+                        🥇 ${campeaoAbsolutoNome.toUpperCase()}
+                    </p>
+                    <p style="font-size: 12px; color: #555; margin: 0;">
+                        Recorde Supremo: <span style="color: #ff3366;">${maiorPontuacaoAbsoluta} pts</span> em <strong>${campeaoAbsolutoJogo}</strong>
+                    </p>
+                `;
+            } else {
+                containerRank.innerHTML = `<p id="playerRank">1º Nenhum recorde registrado</p>`;
+            }
+        }
+
+        renderizarMenuERanking();
+
+        let indiceAtual = 0;
+        const elTitulo = document.getElementById("bannerTitulo");
+        const elDesc = document.getElementById("bannerDescricao");
+        const elBtn = document.getElementById("bannerBtn");
+        const elBanner = document.getElementById("bannerRotativo");
+
+        function alternarBanner() {
+            indiceAtual = (indiceAtual + 1) % jogosDisponiveis.length;
+            const jogo = jogosDisponiveis[indiceAtual];
+
+            elBanner.style.opacity = 0.1;
+            setTimeout(() => {
+                elTitulo.innerText = `${jogo.emoji} ${jogo.titulo}`;
+                elDesc.innerText = `"${jogo.desc}"`;
+                elBanner.style.opacity = 1;
+            }, 400);
+        }
+
+        setInterval(alternarBanner, 5000);
+
+        elBtn.addEventListener("click", () => {
+            const jogoAtual = jogosDisponiveis[indiceAtual];
+            window.ScoreArcade.verificarRegistroAntesDeJogar(() => {
+                if (typeof abrirJogo === 'function') abrirJogo(jogoAtual.id);
+            });
+        });
+
+        document.getElementById("btnVoltar").addEventListener("click", () => {
+            document.getElementById("gameScreen").style.display = "none";
+            document.getElementById("menu").style.display = "flex";
+            if (typeof fecharJogoAnterior === 'function') fecharJogoAnterior();
+            
+            renderizarMenuERanking();
+        });
+    });
+</script>
+
+<script src="audio.js"></script>
+<script src="engine.js"></script>
+<script src="pong.js"></script>
+<script src="snake.js"></script>
+<script src="tetris.js"></script>
+<script src="velha.js"></script>
+<script src="memoria.js"></script>   
+<script src="flappy.js"></script>   
+<script src="invaders.js"></script>
+<script src="pacman.js"></script>
+
+</body>
+</html>
