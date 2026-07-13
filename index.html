@@ -184,17 +184,13 @@
 <script>
     document.addEventListener("DOMContentLoaded", () => {
         // --- CONFIGURAÇÃO DO SUPABASE ---
-        const SUPABASE_URL = "https://yzyubqgpttnggoghabju.supabase.co"; // Removido o final '/rest/v1/' para evitar erros da biblioteca
+        const SUPABASE_URL = "https://yzyubqgpttnggoghabju.supabase.co"; 
         const SUPABASE_KEY = "sb_publishable_5CgjFgc4wyVFugjHLMu4BQ_EAghddKU";
         
-        let supabase = null;
-        try {
-            supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        } catch(e) {
-            console.error("Falha ao inicializar o cliente Supabase:", e);
-        }
+        // sbp criado separadamente para não conflitar com o escopo global da biblioteca
+        const sbp = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // Definição exata dos 8 jogos suportados pelo sistema
+        // Definição dos 8 jogos suportados pelo sistema
         const jogosDisponiveis = [
             { id: "pong", titulo: "PONG", emoji: "🏓", desc: "Desafie seus colegas no clássico dos arcades!" },
             { id: "snake", titulo: "SNAKE", emoji: "🐍", desc: "Agora com controle por gestos (Swipe) para celular!" },
@@ -206,10 +202,10 @@
             { id: "pacman", titulo: "PAC-MAN", emoji: "🟡", desc: "Coma as pastilhas e fuja do Blinky no labirinto clássico!" }
         ];
 
-        // Cache local temporário para guardar os recordes trazidos do servidor
+        // Cache que guarda estritamente as respostas do banco remoto
         let cacheRecordesGlobais = [];
 
-        // Sincroniza o valor de entrada do input superior de usuário com o localStorage do aparelho
+        // Sincroniza a tag do jogador atual usando localStorage
         const inputUsuario = document.getElementById("nomeUsuario");
         const nomeSalvo = localStorage.getItem("arcade_jogador_atual");
         if (nomeSalvo) {
@@ -223,7 +219,7 @@
             }
         });
 
-        // Interface global de scores integrada com o Banco Nuvem
+        // Interface global de scores integrada 100% DIRETO ao banco nuvem
         window.ScoreArcade = {
             getHighScore(idJogo) {
                 const recorde = cacheRecordesGlobais.find(r => r.jogo === idJogo);
@@ -236,29 +232,23 @@
             async atualizarPontuacao(idJogo, scoreAtual) {
                 const highScoreAtual = this.getHighScore(idJogo);
                 
+                // Se a nova pontuação bater o recorde atual do banco, envia direto
                 if (scoreAtual > highScoreAtual) {
                     const nomeAtual = inputUsuario.value.trim().toUpperCase() || "JOGADOR";
                     
-                    if (!supabase) {
-                        // Modo de contingência offline
-                        const idx = cacheRecordesGlobais.findIndex(r => r.jogo === idJogo);
-                        if (idx !== -1) cacheRecordesGlobais[idx] = { jogo: idJogo, jogador: nomeAtual, score: scoreAtual };
-                        else cacheRecordesGlobais.push({ jogo: idJogo, jogador: nomeAtual, score: scoreAtual });
-                        renderizarMenuERanking();
-                        return true;
-                    }
-
                     try {
-                        const { error } = await supabase
+                        // Envia direto para a tabela do Supabase
+                        const { error } = await sbp
                             .from('ranking_arcade')
                             .insert([{ jogo: idJogo, jogador: nomeAtual, score: scoreAtual }]);
                         
                         if (error) throw error;
                         
+                        // Força a atualização da tela buscando o novo dado
                         await carregarEAtualizarTelas();
                         return true;
                     } catch (err) {
-                        console.error("Erro ao salvar pontuação online:", err);
+                        console.error("Erro crítico ao salvar pontuação direto no Supabase:", err);
                     }
                 }
                 return false;
@@ -273,7 +263,7 @@
             }
         };
 
-        // Modal de Registro integrado perfeitamente ao estilo geral da página
+        // Modal de Registro integrado
         function exibirModalCadastro(callbackSucesso) {
             const modalAntigo = document.getElementById("modalCadastroArcade");
             if (modalAntigo) modalAntigo.remove();
@@ -328,39 +318,35 @@
             });
         }
 
-        // Função para buscar os recordes salvos no Supabase com renderização preventiva
+        // Puxa os recordes direto do Supabase
         async function carregarEAtualizarTelas() {
-            // Renderiza imediatamente com dados em branco/locais para os jogos NÃO sumirem da tela
-            renderizarMenuERanking();
-
-            if (!supabase) return;
-
             try {
-                const { data, error } = await supabase
+                const { data, error } = await sbp
                     .from('ranking_arcade')
                     .select('jogo, jogador, score')
                     .order('score', { ascending: false });
 
                 if (error) throw error;
 
+                // Filtra para pegar apenas o maior score de cada jogo trazido do banco
                 const maioresPontuacoesPorJogo = {};
-                data.forEach(item => {
-                    if (!maioresPontuacoesPorJogo[item.jogo] || item.score > maioresPontuacoesPorJogo[item.jogo].score) {
-                        maioresPontuacoesPorJogo[item.jogo] = item;
-                    }
-                });
+                if (data) {
+                    data.forEach(item => {
+                        if (!maioresPontuacoesPorJogo[item.jogo] || item.score > maioresPontuacoesPorJogo[item.jogo].score) {
+                            maioresPontuacoesPorJogo[item.jogo] = item;
+                        }
+                    });
+                }
 
                 cacheRecordesGlobais = Object.values(maioresPontuacoesPorJogo);
-                
-                // Renderiza novamente atualizando com as informações reais vindas da nuvem
                 renderizarMenuERanking();
             } catch (err) {
-                console.error("Erro ao conectar ao banco de dados:", err);
-                // Mantém o menu renderizado preventivamente se falhar
+                console.error("Erro ao carregar dados do Supabase:", err);
+                renderizarMenuERanking();
             }
         }
 
-        // Renderiza o menu e atualiza o ranking geral na tela lateral
+        // Renderiza os cards e o painel lateral baseando-se estritamente no banco
         function renderizarMenuERanking() {
             const containerJogos = document.getElementById("listaJogos");
             if (!containerJogos) return;
@@ -416,10 +402,10 @@
             }
         }
 
-        // Execução inicial
+        // Busca inicial automatizada
         carregarEAtualizarTelas();
 
-        // Gerenciamento dinâmico do Banner rotativo de Destaques
+        // Gerenciamento do Banner rotativo de Destaques
         let indiceAtual = 0;
         const elTitulo = document.getElementById("bannerTitulo");
         const elDesc = document.getElementById("bannerDescricao");
