@@ -184,11 +184,15 @@
 <script>
     document.addEventListener("DOMContentLoaded", () => {
         // --- CONFIGURAÇÃO DO SUPABASE ---
-        // SUBSTITUA ESTES VALORES PELOS DADOS DO SEU PAINEL DO SUPABASE
-        const SUPABASE_URL = "https://yzyubqgpttnggoghabju.supabase.co/rest/v1/";
+        const SUPABASE_URL = "https://yzyubqgpttnggoghabju.supabase.co"; // Removido o final '/rest/v1/' para evitar erros da biblioteca
         const SUPABASE_KEY = "sb_publishable_5CgjFgc4wyVFugjHLMu4BQ_EAghddKU";
         
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let supabase = null;
+        try {
+            supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        } catch(e) {
+            console.error("Falha ao inicializar o cliente Supabase:", e);
+        }
 
         // Definição exata dos 8 jogos suportados pelo sistema
         const jogosDisponiveis = [
@@ -232,10 +236,18 @@
             async atualizarPontuacao(idJogo, scoreAtual) {
                 const highScoreAtual = this.getHighScore(idJogo);
                 
-                // Se a nova pontuação bater o recorde global da nuvem, envia o novo dado
                 if (scoreAtual > highScoreAtual) {
                     const nomeAtual = inputUsuario.value.trim().toUpperCase() || "JOGADOR";
                     
+                    if (!supabase) {
+                        // Modo de contingência offline
+                        const idx = cacheRecordesGlobais.findIndex(r => r.jogo === idJogo);
+                        if (idx !== -1) cacheRecordesGlobais[idx] = { jogo: idJogo, jogador: nomeAtual, score: scoreAtual };
+                        else cacheRecordesGlobais.push({ jogo: idJogo, jogador: nomeAtual, score: scoreAtual });
+                        renderizarMenuERanking();
+                        return true;
+                    }
+
                     try {
                         const { error } = await supabase
                             .from('ranking_arcade')
@@ -243,7 +255,6 @@
                         
                         if (error) throw error;
                         
-                        // Recarrega e atualiza as listagens
                         await carregarEAtualizarTelas();
                         return true;
                     } catch (err) {
@@ -317,8 +328,13 @@
             });
         }
 
-        // Função assíncrona para buscar os recordes salvos no Supabase
+        // Função para buscar os recordes salvos no Supabase com renderização preventiva
         async function carregarEAtualizarTelas() {
+            // Renderiza imediatamente com dados em branco/locais para os jogos NÃO sumirem da tela
+            renderizarMenuERanking();
+
+            if (!supabase) return;
+
             try {
                 const { data, error } = await supabase
                     .from('ranking_arcade')
@@ -327,7 +343,6 @@
 
                 if (error) throw error;
 
-                // Agrupa e seleciona apenas o recorde mais alto de cada jogo individual
                 const maioresPontuacoesPorJogo = {};
                 data.forEach(item => {
                     if (!maioresPontuacoesPorJogo[item.jogo] || item.score > maioresPontuacoesPorJogo[item.jogo].score) {
@@ -337,16 +352,18 @@
 
                 cacheRecordesGlobais = Object.values(maioresPontuacoesPorJogo);
                 
+                // Renderiza novamente atualizando com as informações reais vindas da nuvem
                 renderizarMenuERanking();
             } catch (err) {
                 console.error("Erro ao conectar ao banco de dados:", err);
-                renderizarMenuERanking(); // Fallback se a internet oscilar
+                // Mantém o menu renderizado preventivamente se falhar
             }
         }
 
         // Renderiza o menu e atualiza o ranking geral na tela lateral
         function renderizarMenuERanking() {
             const containerJogos = document.getElementById("listaJogos");
+            if (!containerJogos) return;
             containerJogos.innerHTML = "";
             
             let maiorPontuacaoAbsoluta = -1;
@@ -383,6 +400,8 @@
             });
 
             const containerRank = document.getElementById("containerRankingGeral");
+            if (!containerRank) return;
+
             if (maiorPontuacaoAbsoluta > 0) {
                 containerRank.innerHTML = `
                     <p style="color: #222; font-weight: bold; font-size: 16px; margin: 5px 0;">
@@ -397,7 +416,7 @@
             }
         }
 
-        // Busca inicial automática ao entrar na página
+        // Execução inicial
         carregarEAtualizarTelas();
 
         // Gerenciamento dinâmico do Banner rotativo de Destaques
@@ -408,33 +427,39 @@
         const elBanner = document.getElementById("bannerRotativo");
 
         function alternarBanner() {
+            if (!elBanner) return;
             indiceAtual = (indiceAtual + 1) % jogosDisponiveis.length;
             const jogo = jogosDisponiveis[indiceAtual];
 
             elBanner.style.opacity = 0.1;
             setTimeout(() => {
-                elTitulo.innerText = `${jogo.emoji} ${jogo.titulo}`;
-                elDesc.innerText = `"${jogo.desc}"`;
+                if (elTitulo) elTitulo.innerText = `${jogo.emoji} ${jogo.titulo}`;
+                if (elDesc) elDesc.innerText = `"${jogo.desc}"`;
                 elBanner.style.opacity = 1;
             }, 400);
         }
 
         setInterval(alternarBanner, 5000);
 
-        elBtn.addEventListener("click", () => {
-            const jogoAtual = jogosDisponiveis[indiceAtual];
-            window.ScoreArcade.verificarRegistroAntesDeJogar(() => {
-                if (typeof abrirJogo === 'function') abrirJogo(jogoAtual.id);
+        if (elBtn) {
+            elBtn.addEventListener("click", () => {
+                const jogoAtual = jogosDisponiveis[indiceAtual];
+                window.ScoreArcade.verificarRegistroAntesDeJogar(() => {
+                    if (typeof abrirJogo === 'function') abrirJogo(jogoAtual.id);
+                });
             });
-        });
+        }
 
-        document.getElementById("btnVoltar").addEventListener("click", () => {
-            document.getElementById("gameScreen").style.display = "none";
-            document.getElementById("menu").style.display = "flex";
-            if (typeof fecharJogoAnterior === 'function') fecharJogoAnterior();
-            
-            carregarEAtualizarTelas();
-        });
+        const btnVoltar = document.getElementById("btnVoltar");
+        if (btnVoltar) {
+            btnVoltar.addEventListener("click", () => {
+                document.getElementById("gameScreen").style.display = "none";
+                document.getElementById("menu").style.display = "flex";
+                if (typeof fecharJogoAnterior === 'function') fecharJogoAnterior();
+                
+                carregarEAtualizarTelas();
+            });
+        }
     });
 </script>
 
