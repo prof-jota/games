@@ -156,9 +156,9 @@
             <div class="estatisticas">
                 <h2>📢 Atualizações (v1.3)</h2>
                 <ul class="lista-atualizacoes">
-                <li><h5>Recordes Globais:</h5> Agora os cards exibem o nome do campeão de cada jogo!</li>
-                 <li>   <h5>Hall da Fama: </h5>A aba de ranking calcula em tempo real o maior pontuador de todos os jogos instalados.</li>
-                   <li><h5>Segurança de Recordes:</h5> Alerta de cadastro de nome adicionado antes de iniciar as partidas.</li>
+                    <li><h5>Recordes Globais:</h5> Agora os cards exibem o nome do campeão de cada jogo!</li>
+                    <li><h5>Hall da Fama: </h5>A aba de ranking calcula em tempo real o maior pontuador de todos os jogos instalados.</li>
+                    <li><h5>Segurança de Recordes:</h5> Alerta de cadastro de nome adicionado antes de iniciar as partidas.</li>
                 </ul>
             </div>
         </section>
@@ -178,8 +178,18 @@
     <footer>ARCADE WEB SYSTEM © 2026</footer>
 </div>
 
+<!-- Biblioteca oficial do Supabase carregada via CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script>
     document.addEventListener("DOMContentLoaded", () => {
+        // --- CONFIGURAÇÃO DO SUPABASE ---
+        // SUBSTITUA ESTES VALORES PELOS DADOS DO SEU PAINEL DO SUPABASE
+        const SUPABASE_URL = "https://yzyubqgpttnggoghabju.supabase.co/rest/v1/";
+        const SUPABASE_KEY = "sb_publishable_5CgjFgc4wyVFugjHLMu4BQ_EAghddKU";
+        
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
         // Definição exata dos 8 jogos suportados pelo sistema
         const jogosDisponiveis = [
             { id: "pong", titulo: "PONG", emoji: "🏓", desc: "Desafie seus colegas no clássico dos arcades!" },
@@ -192,7 +202,10 @@
             { id: "pacman", titulo: "PAC-MAN", emoji: "🟡", desc: "Coma as pastilhas e fuja do Blinky no labirinto clássico!" }
         ];
 
-        // Sincroniza o valor de entrada do input superior de usuário com o localStorage
+        // Cache local temporário para guardar os recordes trazidos do servidor
+        let cacheRecordesGlobais = [];
+
+        // Sincroniza o valor de entrada do input superior de usuário com o localStorage do aparelho
         const inputUsuario = document.getElementById("nomeUsuario");
         const nomeSalvo = localStorage.getItem("arcade_jogador_atual");
         if (nomeSalvo) {
@@ -206,25 +219,39 @@
             }
         });
 
-        // Interface global de scores integrada
+        // Interface global de scores integrada com o Banco Nuvem
         window.ScoreArcade = {
             getHighScore(idJogo) {
-                return parseInt(localStorage.getItem(`arcade_high_${idJogo}`)) || 0;
+                const recorde = cacheRecordesGlobais.find(r => r.jogo === idJogo);
+                return recorde ? recorde.score : 0;
             },
             getHighScoreUser(idJogo) {
-                return localStorage.getItem(`arcade_user_${idJogo}`) || "Ninguém";
+                const recorde = cacheRecordesGlobais.find(r => r.jogo === idJogo);
+                return recorde ? recorde.jogador : "Ninguém";
             },
-            atualizarPontuacao(idJogo, scoreAtual) {
-                const highScore = this.getHighScore(idJogo);
-                if (scoreAtual > highScore) {
+            async atualizarPontuacao(idJogo, scoreAtual) {
+                const highScoreAtual = this.getHighScore(idJogo);
+                
+                // Se a nova pontuação bater o recorde global da nuvem, envia o novo dado
+                if (scoreAtual > highScoreAtual) {
                     const nomeAtual = inputUsuario.value.trim().toUpperCase() || "JOGADOR";
-                    localStorage.setItem(`arcade_high_${idJogo}`, scoreAtual);
-                    localStorage.setItem(`arcade_user_${idJogo}`, nomeAtual);
-                    return true;
+                    
+                    try {
+                        const { error } = await supabase
+                            .from('ranking_arcade')
+                            .insert([{ jogo: idJogo, jogador: nomeAtual, score: scoreAtual }]);
+                        
+                        if (error) throw error;
+                        
+                        // Recarrega e atualiza as listagens
+                        await carregarEAtualizarTelas();
+                        return true;
+                    } catch (err) {
+                        console.error("Erro ao salvar pontuação online:", err);
+                    }
                 }
                 return false;
             },
-            // Verifica o nome do usuário; se estiver vazio ou com o padrão "Jogador", exige cadastro antes de jogar
             verificarRegistroAntesDeJogar(callbackIniciar) {
                 const nomeAtual = inputUsuario.value.trim();
                 if (!nomeAtual || nomeAtual.toLowerCase() === "jogador" || nomeAtual === "") {
@@ -237,7 +264,6 @@
 
         // Modal de Registro integrado perfeitamente ao estilo geral da página
         function exibirModalCadastro(callbackSucesso) {
-            // Se já existir um modal, remove para não duplicar
             const modalAntigo = document.getElementById("modalCadastroArcade");
             if (modalAntigo) modalAntigo.remove();
 
@@ -250,7 +276,6 @@
                     <p>Você está acessando como "Jogador". Para computar seus recordes e pontuações nas tabelas, configure sua TAG personalizada:</p>
                     <input type="text" id="inputNomeRegistro" maxlength="12" placeholder="Digite seu nome" autofocus>
                     
-                    <!-- Alerta integrado de erro em estilo limpo (oculto por padrão) -->
                     <div id="erroRegistroArcade" style="color: #ff3366; font-size: 13px; font-weight: bold; margin-bottom: 20px; display: none; text-transform: uppercase;">
                         [ ERRO: DIGITE UM NOME DIFERENTE DE 'JOGADOR' ]
                     </div>
@@ -274,7 +299,6 @@
                     modalOverlay.remove();
                     callbackSucesso();
                 } else {
-                    // Exibe o erro no estilo minimalista
                     msgErro.style.display = "block";
                     inputModal.style.borderColor = "#ff3366";
                     inputModal.style.backgroundColor = "#fff5f5";
@@ -282,17 +306,42 @@
                 }
             });
 
-            // Reseta a estilização se o usuário recomeçar a digitar
             inputModal.addEventListener("input", () => {
                 msgErro.style.display = "none";
                 inputModal.style.borderColor = "#555";
                 inputModal.style.backgroundColor = "#ffffff";
             });
 
-            // Permite submeter pressionando "Enter"
             inputModal.addEventListener("keypress", (e) => {
                 if (e.key === "Enter") btnConfirmar.click();
             });
+        }
+
+        // Função assíncrona para buscar os recordes salvos no Supabase
+        async function carregarEAtualizarTelas() {
+            try {
+                const { data, error } = await supabase
+                    .from('ranking_arcade')
+                    .select('jogo, jogador, score')
+                    .order('score', { ascending: false });
+
+                if (error) throw error;
+
+                // Agrupa e seleciona apenas o recorde mais alto de cada jogo individual
+                const maioresPontuacoesPorJogo = {};
+                data.forEach(item => {
+                    if (!maioresPontuacoesPorJogo[item.jogo] || item.score > maioresPontuacoesPorJogo[item.jogo].score) {
+                        maioresPontuacoesPorJogo[item.jogo] = item;
+                    }
+                });
+
+                cacheRecordesGlobais = Object.values(maioresPontuacoesPorJogo);
+                
+                renderizarMenuERanking();
+            } catch (err) {
+                console.error("Erro ao conectar ao banco de dados:", err);
+                renderizarMenuERanking(); // Fallback se a internet oscilar
+            }
         }
 
         // Renderiza o menu e atualiza o ranking geral na tela lateral
@@ -348,8 +397,10 @@
             }
         }
 
-        renderizarMenuERanking();
+        // Busca inicial automática ao entrar na página
+        carregarEAtualizarTelas();
 
+        // Gerenciamento dinâmico do Banner rotativo de Destaques
         let indiceAtual = 0;
         const elTitulo = document.getElementById("bannerTitulo");
         const elDesc = document.getElementById("bannerDescricao");
@@ -382,7 +433,7 @@
             document.getElementById("menu").style.display = "flex";
             if (typeof fecharJogoAnterior === 'function') fecharJogoAnterior();
             
-            renderizarMenuERanking();
+            carregarEAtualizarTelas();
         });
     });
 </script>
