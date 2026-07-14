@@ -104,6 +104,61 @@
         .arcade-modal button:hover {
             background: #eeeeee;
         }
+
+        /* --- ESTILO DOS COMENTÁRIOS (Preservando a paleta de cores do projeto) --- */
+        .secao-comentarios {
+            margin-top: 15px;
+            border-top: 1px dashed #ccc;
+            padding-top: 15px;
+        }
+        .comentarios-lista {
+            max-height: 120px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            padding-right: 5px;
+        }
+        .comentario-item {
+            font-size: 12px;
+            color: #555;
+            margin-bottom: 8px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+            text-align: left;
+        }
+        .comentario-item strong {
+            color: #222;
+        }
+        .comentario-item span {
+            font-size: 10px;
+            color: #999;
+            display: block;
+        }
+        .form-comentario {
+            display: flex;
+            gap: 5px;
+        }
+        .form-comentario input {
+            flex: 1;
+            padding: 6px;
+            font-family: inherit;
+            font-size: 12px;
+            border: 1px solid #ccc;
+            background: #fff;
+            color: #222;
+        }
+        .form-comentario button {
+            padding: 6px 12px;
+            font-family: inherit;
+            font-size: 12px;
+            background: #fff;
+            border: 1px solid #444;
+            color: #222;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .form-comentario button:hover {
+            background: #eee;
+        }
     </style>
 </head>
 <body>
@@ -146,11 +201,24 @@
                 <p style="font-size: 11px; color: #555;">Outros Desafiantes:</p>
             </div>
 
+            <!-- COLUNA DO MEIO: Preservando a estatística original e adicionando o Mural de forma compacta -->
             <div class="estatisticas">
                 <h2>🎯 Estatísticas</h2>
                 <p id="totalJogosInstalados">Jogos instalados: 8</p>
                 <p id="totalPartidas">Partidas: 0</p>
                 <p>Sistema: ONLINE</p>
+
+                <!-- Área de Comentários perfeitamente integrada ao visual -->
+                <div class="secao-comentarios">
+                    <h3 style="font-size: 14px; margin-bottom: 10px; color: #222; text-align: left;">💬 Mural de Recados</h3>
+                    <div class="comentarios-lista" id="muralComentarios">
+                        <p style="font-size: 11px; color: #999;">Carregando mensagens...</p>
+                    </div>
+                    <form class="form-comentario" id="formComentario">
+                        <input type="text" id="inputComentario" maxlength="100" placeholder="Deixe seu recado..." required>
+                        <button type="submit">ENVIAR</button>
+                    </form>
+                </div>
             </div>
 
             <div class="estatisticas">
@@ -347,6 +415,72 @@
             }
         }
 
+        // --- SISTEMA DE COMENTÁRIOS COM BANCO SUPABASE ---
+        const muralComentarios = document.getElementById("muralComentarios");
+        const formComentario = document.getElementById("formComentario");
+        const inputComentario = document.getElementById("inputComentario");
+
+        async function carregarComentarios() {
+            try {
+                const { data, error } = await sbp
+                    .from('comentarios_arcade')
+                    .select('nome, texto, created_at')
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+
+                if (error) throw error;
+
+                muralComentarios.innerHTML = "";
+                if (data && data.length > 0) {
+                    data.forEach(c => {
+                        const div = document.createElement("div");
+                        div.className = "comentario-item";
+                        
+                        // Formatação simples da data (ex: 13/07 23:26)
+                        const d = new Date(c.created_at);
+                        const dataFormated = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+                        
+                        div.innerHTML = `
+                            <strong>${c.nome.toUpperCase()}:</strong> ${c.texto}
+                            <span>Enviado em ${dataFormated}</span>
+                        `;
+                        muralComentarios.appendChild(div);
+                    });
+                } else {
+                    muralComentarios.innerHTML = `<p style="font-size: 11px; color: #999;">Nenhum comentário enviado ainda.</p>`;
+                }
+            } catch (err) {
+                console.error("Erro ao buscar comentários do Supabase:", err);
+                muralComentarios.innerHTML = `<p style="font-size: 11px; color: #ff3366;">Erro ao carregar o mural.</p>`;
+            }
+        }
+
+        formComentario.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const texto = inputComentario.value.trim();
+            if (!texto) return;
+
+            window.ScoreArcade.verificarRegistroAntesDeJogar(async () => {
+                const nomeAtual = inputUsuario.value.trim().toUpperCase() || "JOGADOR";
+                try {
+                    const { error } = await sbp
+                        .from('comentarios_arcade')
+                        .insert([{ nome: nomeAtual, texto: texto }]);
+
+                    if (error) throw error;
+
+                    inputComentario.value = "";
+                    await carregarComentarios();
+                } catch (err) {
+                    console.error("Erro ao enviar comentário:", err);
+                    alert("Falha ao enviar comentário para o banco de dados.");
+                }
+            });
+        });
+
+        // Inicializa os comentários juntamente com a busca inicial
+        carregarComentarios();
+
         // Renderiza os cards e o painel lateral baseando-se estritamente no banco
         function renderizarMenuERanking() {
             const containerJogos = document.getElementById("listaJogos");
@@ -445,6 +579,7 @@
                 if (typeof fecharJogoAnterior === 'function') fecharJogoAnterior();
                 
                 carregarEAtualizarTelas();
+                carregarComentarios();
             });
         }
     });
