@@ -1,19 +1,20 @@
 /* ==================================================
    ARCADE WEB SYSTEM
-   JOGO: PONG (Retro Style com Suporte a Touch e Scores)
+   JOGO: PONG (Campanha por Fases com Dificuldade Progressiva)
 ================================================== */
 
-let pongInterval = null; // Guarda o loop do jogo para podermos parar depois
+let pongAnimFrame = null;
 
 function iniciarPong() {
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
 
-    // Configurações do Jogo
+    // Configurações Básicas do Jogo
     const paddleWidth = 10;
     const paddleHeight = 80;
     const ballRadius = 7;
-    const maxScore = 5; // Pontuação necessária para vencer a partida
+    const maxScore = 5; // Mantém a pontuação necessária para vencer a rodada/partida
+    const maxFases = 5; // Fase final do jogo
 
     // Posições Iniciais
     let playerY = (canvas.height - paddleHeight) / 2;
@@ -21,30 +22,31 @@ function iniciarPong() {
     let ballX = canvas.width / 2;
     let ballY = canvas.height / 2;
 
-    // Velocidades
-    let ballSpeedX = 5;
-    let ballSpeedY = 5;
-    const playerSpeed = 7;
-    const computerSpeed = 4.5; // Ajuste para mudar a dificuldade da IA
+    // Sistema de Fases e Pontuação (Estrutura idêntica à original)
+    let faseAtual = 1;
+    let playerScore = 0;      // Mantém o playerScore puro para o envio final
+    let computerScore = 0;    
 
-    // Pontuação e Estados
-    let playerScore = 0;
-    let computerScore = 0;
-    let gameOver = false;
-    let venceu = false;
+    // Velocidades Iniciais (Fase 1)
+    let baseBallSpeed = 5;
+    let ballSpeedX = baseBallSpeed;
+    let ballSpeedY = baseBallSpeed;
+    const playerSpeed = 7;
+    let currentComputerSpeed = 4.2; // Velocidade inicial da IA
+
+    // Estados de Jogo
+    let emTransicao = false;  // Controla a tela entre uma fase e outra
+    let gameOver = false;     
+    let venceuJogo = false;   
     let fimDeJogoEnviado = false;
 
-    // Controles do Jogador (Teclado)
+    // Controles do Jogador
     let upPressed = false;
     let downPressed = false;
 
     // --- ESCUTAR EVENTOS ---
-
-    // Teclado (Desktop)
     window.addEventListener("keydown", moverRaquete);
     window.addEventListener("keyup", pararRaquete);
-
-    // Touchscreen (Celular)
     canvas.addEventListener("touchstart", tratarTouch, { passive: false });
     canvas.addEventListener("touchmove", tratarTouch, { passive: false });
 
@@ -58,23 +60,17 @@ function iniciarPong() {
         if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") downPressed = false;
     }
 
-    // Função que calcula a posição do touch proporcional ao tamanho do Canvas
     function tratarTouch(e) {
-        e.preventDefault(); // Impede o celular de rolar a página enquanto joga
-        if (gameOver || venceu) return;
+        e.preventDefault();
+        if (gameOver || venceuJogo || emTransicao) return;
         
         const rect = canvas.getBoundingClientRect();
-        // Pega o primeiro ponto de toque
         const touchY = e.touches[0].clientY - rect.top;
-        
-        // Escala a posição caso o canvas esteja redimensionado pelo CSS
         const escalaY = canvas.height / rect.height;
         const canvasTouchY = touchY * escalaY;
 
-        // Centraliza a raquete no dedo do jogador
         playerY = canvasTouchY - paddleHeight / 2;
 
-        // Limita a raquete dentro das bordas do jogo
         if (playerY < 0) playerY = 0;
         if (playerY > canvas.height - paddleHeight) playerY = canvas.height - paddleHeight;
     }
@@ -82,47 +78,81 @@ function iniciarPong() {
     function resetBola() {
         ballX = canvas.width / 2;
         ballY = canvas.height / 2;
-        ballSpeedX = -ballSpeedX; // Inverte quem começa sacando
-        ballSpeedY = (Math.random() > 0.5 ? 1 : -1) * 4;
+        ballSpeedX = (ballSpeedX > 0 ? -1 : 1) * baseBallSpeed;
+        ballSpeedY = (Math.random() > 0.5 ? 1 : -1) * (baseBallSpeed - 1);
+    }
+
+    // Função para subir de fase com efeitos de transição
+    function irParaProximaFase() {
+        emTransicao = true;
+
+        if (typeof AudioArcade !== 'undefined') AudioArcade.playSucesso();
+
+        setTimeout(() => {
+            faseAtual++;
+            // Zeramos apenas o score da IA na nova fase para dar chance ao jogador.
+            // O playerScore NÃO é resetado para que no final ele some o valor correto!
+            computerScore = 0; 
+
+            // Dificuldade aumenta: Bola 15% mais rápida por fase
+            baseBallSpeed = 5 * (1 + (faseAtual - 1) * 0.15);
+            // IA ganha mais velocidade de reação
+            currentComputerSpeed = 4.2 + (faseAtual - 1) * 0.8;
+
+            resetBola();
+            emTransicao = false;
+        }, 3000); 
     }
 
     // Loop Principal
     function atualizarJogo() {
-        if (gameOver || venceu) return;
+        if (gameOver || venceuJogo) return;
 
-        // 1. Movimento do Jogador (Apenas via Teclado, pois o Touch atualiza direto)
+        // Se estivermos na tela de transição de fase, apenas desenhamos o aviso
+        if (emTransicao) {
+            renderizarTransicao();
+            pongAnimFrame = requestAnimationFrame(atualizarJogo);
+            return;
+        }
+
+        // 1. Movimento do Jogador (Teclado)
         if (upPressed && playerY > 0) playerY -= playerSpeed;
         if (downPressed && playerY < canvas.height - paddleHeight) playerY += playerSpeed;
 
-        // 2. Movimento da Inteligência Artificial (Computador)
+        // 2. Movimento da IA
         const centroRaqueteComputador = computerY + paddleHeight / 2;
         if (centroRaqueteComputador < ballY - 10 && computerY < canvas.height - paddleHeight) {
-            computerY += computerSpeed;
+            computerY += currentComputerSpeed;
         } else if (centroRaqueteComputador > ballY + 10 && computerY > 0) {
-            computerY -= computerSpeed;
+            computerY -= currentComputerSpeed;
         }
 
         // 3. Movimento da Bola
         ballX += ballSpeedX;
         ballY += ballSpeedY;
 
-        // Colisão com as paredes superiores/inferiores (Ricochete)
-        if (ballY - ballRadius < 0 || ballY + ballRadius > canvas.height) {
+        // Colisão Parede Superior / Inferior
+        if (ballY - ballRadius < 0) {
+            ballY = ballRadius;
+            ballSpeedY = -ballSpeedY;
+            if (typeof AudioArcade !== 'undefined') AudioArcade.playBip(550, 0.05, "triangle");
+        } else if (ballY + ballRadius > canvas.height) {
+            ballY = canvas.height - ballRadius;
             ballSpeedY = -ballSpeedY;
             if (typeof AudioArcade !== 'undefined') AudioArcade.playBip(550, 0.05, "triangle");
         }
 
-        // Colisão com a raquete do Player (Esquerda)
+        // Colisão Raquete Jogador (Esquerda)
         if (ballX - ballRadius < paddleWidth + 20) {
             if (ballY > playerY && ballY < playerY + paddleHeight) {
-                ballSpeedX = -ballSpeedX;
+                ballSpeedX = Math.abs(ballSpeedX); 
                 let deltaY = ballY - (playerY + paddleHeight / 2);
-                ballSpeedY = deltaY * 0.3;
+                ballSpeedY = deltaY * 0.35;
                 if (typeof AudioArcade !== 'undefined') AudioArcade.playBip(440, 0.08, "square");
             } else if (ballX < 0) {
                 computerScore++;
                 if (computerScore >= maxScore) {
-                    gameOver = true;
+                    gameOver = true; // Se a IA ganhar a rodada, acaba o jogo
                 } else {
                     if (typeof AudioArcade !== 'undefined') AudioArcade.playErro();
                     resetBola();
@@ -130,17 +160,24 @@ function iniciarPong() {
             }
         }
 
-        // Colisão com a raquete do Computador (Direita)
+        // Colisão Raquete Computador (Direita)
         if (ballX + ballRadius > canvas.width - paddleWidth - 20) {
             if (ballY > computerY && ballY < computerY + paddleHeight) {
-                ballSpeedX = -ballSpeedX;
+                ballSpeedX = -Math.abs(ballSpeedX); 
                 let deltaY = ballY - (computerY + paddleHeight / 2);
-                ballSpeedY = deltaY * 0.3;
+                ballSpeedY = deltaY * 0.35;
                 if (typeof AudioArcade !== 'undefined') AudioArcade.playBip(440, 0.08, "square");
             } else if (ballX > canvas.width) {
-                playerScore++;
-                if (playerScore >= maxScore) {
-                    venceu = true;
+                playerScore++; // O playerScore sobe continuamente ao longo das fases
+                
+                // Verifica se o jogador atingiu a pontuação para passar de fase
+                // (Exemplo: 5 pontos para Fase 2, 10 para Fase 3, 15 para Fase 4...)
+                if (playerScore >= faseAtual * maxScore) {
+                    if (faseAtual >= maxFases) {
+                        venceuJogo = true; // Venceu a última fase!
+                    } else {
+                        irParaProximaFase(); 
+                    }
                 } else {
                     if (typeof AudioArcade !== 'undefined') AudioArcade.playSucesso();
                     resetBola();
@@ -148,15 +185,15 @@ function iniciarPong() {
             }
         }
 
-        // 4. RENDERIZAÇÃO NA TELA
+        // 4. RENDERIZAÇÃO PADRÃO DO JOGO
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Fundo Preto
+        // Fundo
         ctx.fillStyle = "#000";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Linha Divisória Central
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+        // Rede Central
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
         ctx.setLineDash([10, 10]);
         ctx.beginPath();
         ctx.moveTo(canvas.width / 2, 0);
@@ -164,39 +201,45 @@ function iniciarPong() {
         ctx.stroke();
         ctx.setLineDash([]);
 
-        // Cores dos elementos do jogo
+        // Desenhar Raquetes e Bola
         ctx.fillStyle = "#fff";
-
-        // Raquete Jogador (Esquerda)
         ctx.fillRect(20, playerY, paddleWidth, paddleHeight);
-
-        // Raquete Computador (Direita)
         ctx.fillRect(canvas.width - paddleWidth - 20, computerY, paddleWidth, paddleHeight);
-
-        // Bola
+        
         ctx.beginPath();
         ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
         ctx.fill();
 
-        // Placar
+        // Placar da rodada atual de forma visual amigável
+        // Exibe o progresso do jogador dentro da fase atual
+        let scoreExibidoPlayer = playerScore - ((faseAtual - 1) * maxScore);
         ctx.font = "45px 'Courier New'";
-        ctx.fillText(playerScore, canvas.width / 4, 60);
+        ctx.textAlign = "center";
+        ctx.fillText(scoreExibidoPlayer, canvas.width / 4, 60);
         ctx.fillText(computerScore, (canvas.width / 4) * 3, 60);
 
-        // Processamento de Fim de Jogo
-        if (gameOver || venceu) {
-            clearInterval(pongInterval);
+        // Indicadores no topo do Canvas
+        ctx.font = "16px 'Courier New'";
+        ctx.fillStyle = "#00ff66";
+        ctx.fillText(`FASE ${faseAtual}/${maxFases}`, canvas.width / 2, 30);
+        ctx.fillStyle = "#aaa";
+        ctx.fillText(`SCORE TOTAL: ${playerScore}`, canvas.width / 2, 55);
 
-            // Garante o envio do score final e efeitos sonoros apenas uma única vez
+        // Telas de Fim de Jogo (Vitória ou Derrota total)
+        if (gameOver || venceuJogo) {
+            if (pongAnimFrame) cancelAnimationFrame(pongAnimFrame);
+
+            // ENVIO SEGURO DO SCORE ORIGINAL
             if (!fimDeJogoEnviado) {
                 fimDeJogoEnviado = true;
 
+                // Envia exatamente a variável 'playerScore' sem alterações estruturais
                 if (typeof window.ScoreArcade !== 'undefined') {
                     window.ScoreArcade.atualizarPontuacao("pong", playerScore);
                 }
 
                 if (typeof AudioArcade !== 'undefined') {
-                    if (venceu) {
+                    if (venceuJogo) {
                         AudioArcade.playSucesso();
                     } else {
                         AudioArcade.playErro();
@@ -204,28 +247,60 @@ function iniciarPong() {
                 }
             }
 
-            // Overlay de Fim de Jogo
-            ctx.fillStyle = "rgba(0,0,0,0.8)";
+            ctx.fillStyle = "rgba(0,0,0,0.85)";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.font = "40px 'Courier New'";
             ctx.textAlign = "center";
 
-            if (venceu) {
+            if (venceuJogo) {
                 ctx.fillStyle = "#00ff66";
-                ctx.fillText("VITÓRIA!", canvas.width / 2, canvas.height / 2);
+                ctx.fillText("CAMPEÃO DO PONG!", canvas.width / 2, canvas.height / 2 - 20);
+                ctx.font = "20px 'Courier New'";
+                ctx.fillStyle = "#fff";
+                ctx.fillText(`Você venceu todas as ${maxFases} fases!`, canvas.width / 2, canvas.height / 2 + 25);
+                ctx.fillText(`Pontuação Enviada: ${playerScore}`, canvas.width / 2, canvas.height / 2 + 60);
             } else {
                 ctx.fillStyle = "#ff3333";
-                ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2);
+                ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 20);
+                ctx.font = "20px 'Courier New'";
+                ctx.fillStyle = "#fff";
+                ctx.fillText(`Você parou na Fase ${faseAtual}`, canvas.width / 2, canvas.height / 2 + 25);
+                ctx.fillText(`Pontuação Final: ${playerScore}`, canvas.width / 2, canvas.height / 2 + 60);
             }
+            return;
         }
+
+        pongAnimFrame = requestAnimationFrame(atualizarJogo);
     }
 
-    if (pongInterval) clearInterval(pongInterval);
-    pongInterval = setInterval(atualizarJogo, 1000 / 60);
+    // Renderiza a transição de fase
+    function renderizarTransicao() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#000";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Salva uma função de limpeza global robusta
+        ctx.textAlign = "center";
+        ctx.font = "35px 'Courier New'";
+        ctx.fillStyle = "#00ff66";
+        ctx.fillText(`FASE ${faseAtual} CONCLUÍDA!`, canvas.width / 2, canvas.height / 2 - 30);
+
+        ctx.font = "20px 'Courier New'";
+        ctx.fillStyle = "#fff";
+        ctx.fillText(`Prepare-se para a FASE ${faseAtual + 1}`, canvas.width / 2, canvas.height / 2 + 20);
+        ctx.fillStyle = "#ffcc00";
+        ctx.fillText(`A velocidade do jogo vai aumentar!`, canvas.width / 2, canvas.height / 2 + 55);
+    }
+
+    // Inicialização
+    if (pongAnimFrame) cancelAnimationFrame(pongAnimFrame);
+    pongAnimFrame = requestAnimationFrame(atualizarJogo);
+
+    // Função de Limpeza
     window.limparEventosPong = () => {
-        if (pongInterval) { clearInterval(pongInterval); pongInterval = null; }
+        if (pongAnimFrame) { 
+            cancelAnimationFrame(pongAnimFrame); 
+            pongAnimFrame = null; 
+        }
         window.removeEventListener("keydown", moverRaquete);
         window.removeEventListener("keyup", pararRaquete);
         canvas.removeEventListener("touchstart", tratarTouch);
