@@ -91,6 +91,46 @@
             outline: none;
             background: #fafafa;
         }
+        /* --- DESTAQUE DA NOVA ATUALIZAÇÃO (Mural de Recados) --- */
+.secao-comentarios.novidade-destacada {
+    border: 2px solid #ff3366 !important; /* Linha vermelha sólida */
+    border-radius: 4px;
+    padding: 15px 10px 10px 10px;
+    margin-top: 15px;
+    position: relative;
+    background: rgba(255, 51, 102, 0.03); /* Fundo sutilmente avermelhado */
+    
+    /* Efeito de pulsação para atrair o olhar */
+    animation: pulsarBorda 2s infinite alternate;
+}
+
+/* Badge "NOVO!" posicionado no topo da borda */
+.secao-comentarios.novidade-destacada::before {
+    content: "🆕 NOVO recurso";
+    position: absolute;
+    top: -10px;
+    left: 10px;
+    background: #ff3366;
+    color: #fff;
+    font-size: 9px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    font-family: inherit;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+@keyframes pulsarBorda {
+    0% {
+        box-shadow: 0 0 2px rgba(255, 51, 102, 0.2);
+        border-color: #ff3366;
+    }
+    100% {
+        box-shadow: 0 0 10px rgba(255, 51, 102, 0.6);
+        border-color: #ff5e87;
+    }
+}
         .arcade-modal button {
             background: #ffffff;
             color: #222;
@@ -209,7 +249,7 @@
                 <p>Sistema: ONLINE</p>
 
                 <!-- Área de Comentários perfeitamente integrada ao visual -->
-                <div class="secao-comentarios">
+                <div class="secao-comentarios novidade-destacada">
                     <h3 style="font-size: 14px; margin-bottom: 10px; color: #222; text-align: left;">💬 Mural de Recados</h3>
                     <div class="comentarios-lista" id="muralComentarios">
                         <p style="font-size: 11px; color: #999;">Carregando mensagens...</p>
