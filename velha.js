@@ -1,20 +1,26 @@
 /* ==================================================
    ARCADE WEB SYSTEM
-   JOGO: JOGO DA VELHA (IA Inteligente + Suporte Touch)
+   JOGO: JOGO DA VELHA (IA Inteligente + Campanha Progressiva)
 ================================================== */
 
 function iniciarVelha() {
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
 
+    // Variáveis Globais de Estado da Partida
     let tabuleiro = ["", "", "", "", "", "", "", "", ""];
     let jogoAtivo = true;
     let mensagemStatus = "SEU TURNO (X)";
-    let scoreEnviado = false; // Evita que o score envie duplicado se houver cliques pós-fim
+    let scoreEnviado = false; 
+
+    // Mecânica de Pontuação Progressiva
+    let scoreAcumulado = 0;
+    let rodadaAtual = 1;
+    let jogadasDoJogador = 0; // Quantos cliques válidos o jogador fez nesta rodada
 
     const tamanhoQuadrado = 120;
     const offsetX = (canvas.width - tamanhoQuadrado * 3) / 2;
-    const offsetY = (canvas.height - tamanhoQuadrado * 3) / 2;
+    const offsetY = (canvas.height - tamanhoQuadrado * 3) / 2 + 20; // Rebaixado levemente para dar espaço ao HUD
 
     renderizar();
 
@@ -23,7 +29,7 @@ function iniciarVelha() {
     canvas.addEventListener("touchstart", gerirTouchTabuleiro, { passive: false });
 
     function gerirTouchTabuleiro(e) {
-        e.preventDefault(); // Evita duplo clique de zoom no mobile
+        e.preventDefault(); 
         if (e.touches.length > 0) {
             processarCliqueOuToque(e.touches[0].clientX, e.touches[0].clientY);
         }
@@ -34,11 +40,9 @@ function iniciarVelha() {
     }
 
     function processarCliqueOuToque(clientX, clientY) {
-        if (!jogoAtivo || mensagemStatus.includes("PENSANDO")) return;
+        if (!jogoAtivo || mensagemStatus.includes("PENSANDO") || mensagemStatus.includes("PREPARE-SE")) return;
 
         const rect = canvas.getBoundingClientRect();
-        
-        // Correção de escala caso o canvas esteja redimensionado na tela (essencial para mobile)
         const escalaX = canvas.width / rect.width;
         const escalaY = canvas.height / rect.height;
 
@@ -57,28 +61,28 @@ function iniciarVelha() {
                 
                 if (tabuleiro[i] === "") {
                     tabuleiro[i] = "X";
+                    jogadasDoJogador++;
                     if (typeof AudioArcade !== 'undefined') AudioArcade.playBip(400, 0.08, 'sine');
                     
                     if (verificarVencedor("X")) {
-                        finalizarJogo("VOCÊ VENCEU!", 10);
+                        processarFimDaRodada("VOCÊ VENCEU!");
                         return;
                     }
 
                     if (tabuleiro.every(q => q !== "")) {
-                        finalizarJogo("EMPATE!", 0);
+                        processarFimDaRodada("EMPATE!");
                         return;
                     }
 
                     // Turno da IA
                     mensagemStatus = "IA PENSANDO...";
                     renderizar();
-                    setTimeout(jogadaIA, 500);
+                    setTimeout(jogadaIA, 400);
                 }
             }
         }
     }
 
-    // --- MOTOR DE INTELIGÊNCIA ARTIFICIAL (IA) ---
     function jogadaIA() {
         if (!jogoAtivo) return;
 
@@ -94,12 +98,9 @@ function iniciarVelha() {
 
         // 3. REGRA POSICIONAL: Se não houver ameaças, domina as melhores posições do tabuleiro
         if (escolha === -1) {
-            // Prioridade 1: Centro (posição mais forte)
             if (tabuleiro[4] === "") {
                 escolha = 4;
-            } 
-            // Prioridade 2: Cantos estratégicos
-            else {
+            } else {
                 const cantos = [0, 2, 6, 8].filter(i => tabuleiro[i] === "");
                 if (cantos.length > 0) {
                     escolha = cantos[Math.floor(Math.random() * cantos.length)];
@@ -107,7 +108,7 @@ function iniciarVelha() {
             }
         }
 
-        // 4. Se ainda assim não decidiu, pega qualquer espaço restante por segurança
+        // 4. Fallback de segurança
         if (escolha === -1) {
             let vazios = [];
             tabuleiro.forEach((q, i) => { if (q === "") vazios.push(i); });
@@ -116,18 +117,17 @@ function iniciarVelha() {
             }
         }
 
-        // Executa a jogada da IA
         if (escolha !== -1) {
             tabuleiro[escolha] = "O";
             if (typeof AudioArcade !== 'undefined') AudioArcade.playBip(300, 0.08, 'triangle');
 
             if (verificarVencedor("O")) {
-                finalizarJogo("A IA VENCEU!", 0);
+                processarFimDaRodada("A IA VENCEU!");
                 return;
             }
 
             if (tabuleiro.every(q => q !== "")) {
-                finalizarJogo("EMPATE!", 0);
+                processarFimDaRodada("EMPATE!");
                 return;
             }
 
@@ -136,19 +136,17 @@ function iniciarVelha() {
         renderizar();
     }
 
-    // Função auxiliar que detecta se há uma combinação prestes a fechar (com 2 preenchidos e 1 vazio)
     function encontrarMelhorEspaco(player) {
         const condicoes = [
-            [0, 1, 2], [3, 4, 5], [6, 7, 8], // Horizontais
-            [0, 3, 6], [1, 4, 7], [2, 5, 8], // Verticais
-            [0, 4, 8], [2, 4, 6]             // Diagonais
+            [0, 1, 2], [3, 4, 5], [6, 7, 8], 
+            [0, 3, 6], [1, 4, 7], [2, 5, 8], 
+            [0, 4, 8], [2, 4, 6]             
         ];
 
         for (let comb of condicoes) {
             const marcados = comb.filter(i => tabuleiro[i] === player);
             const vazios = comb.filter(i => tabuleiro[i] === "");
 
-            // Se tem 2 do mesmo jogador e o 3º está livre, essa é a jogada crítica!
             if (marcados.length === 2 && vazios.length === 1) {
                 return vazios[0];
             }
@@ -165,22 +163,68 @@ function iniciarVelha() {
         return condicoes.some(comb => comb.every(i => tabuleiro[i] === player));
     }
 
-    function finalizarJogo(resultado, pontosObtidos) {
-        jogoAtivo = false;
-        mensagemStatus = resultado;
-        renderizar();
+    // Gerencia o fluxo dinâmico de pontuação e transição
+    function processarFimDaRodada(resultado) {
+        if (resultado === "VOCÊ VENCEU!") {
+            // Pontuação Base: 100 pontos por vitória
+            let pontosGanhos = 100;
 
-        if (!scoreEnviado) {
-            scoreEnviado = true;
+            // Bônus de eficiência: quanto menos turnos você levou para travar a IA, mais ganha
+            // Exemplo: Se ganhou com 3 jogadas -> 50 - (3 * 10) = +20 extras.
+            let bonusEficiencia = 50 - (jogadasDoJogador * 10);
+            if (bonusEficiencia > 0) pontosGanhos += bonusEficiencia;
 
-            // Sincroniza o Score com a estrutura unificada do Arcade
+            scoreAcumulado += pontosGanhos;
+            mensagemStatus = `VITÓRIA! +${pontosGanhos} PTS`;
+            renderizar();
+
+            if (typeof AudioArcade !== 'undefined') AudioArcade.playSucesso();
+
+            // Sincroniza o progresso no backend preventivamente a cada vitória
             if (typeof window.ScoreArcade !== 'undefined') {
-                window.ScoreArcade.atualizarPontuacao("velha", pontosObtidos);
+                window.ScoreArcade.atualizarPontuacao("velha", scoreAcumulado);
             }
 
-            if (resultado === "VOCÊ VENCEU!") {
-                if (typeof AudioArcade !== 'undefined') AudioArcade.playSucesso();
-            } else {
+            // Avança para a próxima rodada após um delay sutil
+            setTimeout(() => {
+                rodadaAtual++;
+                tabuleiro = ["", "", "", "", "", "", "", "", ""];
+                jogadasDoJogador = 0;
+                mensagemStatus = `RODADA ${rodadaAtual} - SEU TURNO`;
+                renderizar();
+            }, 2000);
+
+        } else if (resultado === "EMPATE!") {
+            // Empate concede um prêmio menor de resiliência e avança a rodada
+            scoreAcumulado += 15;
+            mensagemStatus = "VELHA! +15 PTS";
+            renderizar();
+
+            if (typeof AudioArcade !== 'undefined') AudioArcade.playBip(440, 0.15, "square");
+
+            if (typeof window.ScoreArcade !== 'undefined') {
+                window.ScoreArcade.atualizarPontuacao("velha", scoreAcumulado);
+            }
+
+            setTimeout(() => {
+                rodadaAtual++;
+                tabuleiro = ["", "", "", "", "", "", "", "", ""];
+                jogadasDoJogador = 0;
+                mensagemStatus = `RODADA ${rodadaAtual} - SEU TURNO`;
+                renderizar();
+            }, 2000);
+
+        } else if (resultado === "A IA VENCEU!") {
+            // Fim total da linha de vitórias (Game Over)
+            jogoAtivo = false;
+            mensagemStatus = "FIM DE JOGO!";
+            renderizar();
+
+            if (!scoreEnviado) {
+                scoreEnviado = true;
+                if (typeof window.ScoreArcade !== 'undefined') {
+                    window.ScoreArcade.atualizarPontuacao("velha", scoreAcumulado);
+                }
                 if (typeof AudioArcade !== 'undefined') AudioArcade.playErro();
             }
         }
@@ -190,7 +234,19 @@ function iniciarVelha() {
         ctx.fillStyle = "#151520";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Desenhar Grelha
+        // HUD - Placar Superior Contínuo
+        ctx.font = "20px 'Courier New'";
+        ctx.fillStyle = "#ebf1ee";
+        ctx.textBaseline = "top";
+
+        ctx.textAlign = "left";
+        ctx.fillText(`SCORE ACC: ${scoreAcumulado}`, 30, 25);
+
+        ctx.textAlign = "right";
+        ctx.fillStyle = "#ffcc00";
+        ctx.fillText(`RODADA: ${rodadaAtual}`, canvas.width - 30, 25);
+
+        // Desenhar Linhas do Tabuleiro
         ctx.strokeStyle = "#444466";
         ctx.lineWidth = 5;
 
@@ -223,14 +279,25 @@ function iniciarVelha() {
             ctx.fillText(simbolo, cx, cy);
         });
 
-        // Banner Superior de Estado
+        // Banner Centralizado de Turno/Aviso
         ctx.font = "24px 'Courier New'";
         ctx.fillStyle = "#fff";
         ctx.textAlign = "center";
-        ctx.fillText(mensagemStatus, canvas.width / 2, offsetY - 40);
+        
+        if (mensagemStatus === "FIM DE JOGO!") {
+            ctx.fillStyle = "#ff3366";
+            ctx.fillText(mensagemStatus, canvas.width / 2, offsetY - 35);
+            
+            ctx.fillStyle = "#fff";
+            ctx.font = "18px 'Courier New'";
+            ctx.fillText(`Você caiu na Rodada ${rodadaAtual} com ${scoreAcumulado} pontos.`, canvas.width / 2, offsetY + (tamanhoQuadrado * 3) + 35);
+        } else {
+            if (mensagemStatus.includes("VITÓRIA")) ctx.fillStyle = "#00ff66";
+            else if (mensagemStatus.includes("VELHA")) ctx.fillStyle = "#ffcc00";
+            ctx.fillText(mensagemStatus, canvas.width / 2, offsetY - 35);
+        }
     }
 
-    // Limpeza completa dos eventos (incluindo touch)
     window.limparEventosVelha = () => {
         canvas.removeEventListener("click", gerirCliqueTabuleiro);
         canvas.removeEventListener("touchstart", gerirTouchTabuleiro);
