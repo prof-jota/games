@@ -21,6 +21,9 @@ function iniciarFlappy() {
     let score = 0;
     let gameOver = false;
     let somGameOverTocado = false;
+    
+    // NOVA VARIÁVEL: Controla se a física e os canos devem rodar
+    let jogoIniciado = false; 
 
     function criarCano() {
         let alturaSuperior = Math.floor(Math.random() * (canvas.height - canoEspaco - 100)) + 50;
@@ -45,6 +48,12 @@ function iniciarFlappy() {
 
     function executarSalto() {
         if (gameOver) return;
+
+        // Se o jogo ainda não começou, inicia ele agora!
+        if (!jogoIniciado) {
+            jogoIniciado = true;
+        }
+
         velocidade = salto;
         if (typeof AudioArcade !== 'undefined') AudioArcade.playBip(400, 0.04, 'sine');
     }
@@ -63,6 +72,9 @@ function iniciarFlappy() {
 
     function atualizar() {
         if (gameOver) return;
+        
+        // Se o jogador ainda não deu o primeiro comando, não atualiza a física nem os canos
+        if (!jogoIniciado) return; 
 
         velocidade += gravidade;
         birdY += velocidade;
@@ -136,6 +148,18 @@ function iniciarFlappy() {
         ctx.fillStyle = "#fff";
         ctx.textAlign = "center";
         ctx.fillText(score, canvas.width / 2, 50);
+
+        // MENSAGEM DE INÍCIO: Se o jogo ainda não começou, mostra instrução na tela
+        if (!jogoIniciado && !gameOver) {
+            ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.font = "20px 'Courier New'";
+            ctx.fillStyle = "#fff";
+            ctx.textAlign = "center";
+            ctx.fillText("APERTE ESPAÇO OU TOQUE", canvas.width / 2, canvas.height / 2 - 10);
+            ctx.fillText("PARA INICIAR", canvas.width / 2, canvas.height / 2 + 20);
+        }
 
         if (gameOver) {
             clearInterval(flappyInterval);
